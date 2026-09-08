@@ -295,9 +295,11 @@ namespace BioEden.NoDOF
                 object currentPlayer = gameType.GetProperty("Plyr", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(game);
                 object worldGrid = currentPlayer?.GetType().GetProperty("WorldGrid", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(currentPlayer);
                 object state = gameType.GetProperty("StateCurrent", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(game);
+                object gridInitialized = worldGrid?.GetType().GetProperty("Inited", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(worldGrid);
                 string stateName = state?.ToString();
                 bool playableState = stateName == "Play" || stateName == "PlayPost" || stateName == "Pause";
-                return !loading && playableState && currentPlayer != null && worldGrid != null;
+                bool readyGrid = gridInitialized is bool initialized && initialized;
+                return !loading && playableState && currentPlayer != null && worldGrid != null && readyGrid;
             }
             catch { return false; }
         }
