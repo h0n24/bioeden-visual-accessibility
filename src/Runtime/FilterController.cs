@@ -28,7 +28,25 @@ namespace BioEden.NoDOF
         private readonly Dictionary<Camera, int> cameraMasks = new Dictionary<Camera, int>();
         private readonly Dictionary<Renderer, Material[]> cleanWaterMaterials = new Dictionary<Renderer, Material[]>();
         private readonly List<Material> waterMaterialClones = new List<Material>();
-        private readonly Dictionary<VisualEffect, Vector4> cloudColors = new Dictionary<VisualEffect, Vector4>();
+        private sealed class EnvironmentalColor
+        {
+            public string Property;
+            public Vector4 Original;
+        }
+
+        private static readonly string[] EnvironmentalKeywords =
+        {
+            "cloud", "fog", "smoke", "dust"
+        };
+
+        // The game's atmospheric graphs use several property names. Keep the
+        // list explicit so unrelated gameplay VFX are never modified.
+        private static readonly string[] EnvironmentalColorProperties =
+        {
+            "Color", "Color 1", "Color 2", "Color 3", "color", "c"
+        };
+
+        private readonly Dictionary<VisualEffect, List<EnvironmentalColor>> cloudColors = new Dictionary<VisualEffect, List<EnvironmentalColor>>();
         private readonly List<Renderer> waterRenderers = new List<Renderer>();
         private readonly Dictionary<Renderer, LakeWaterMesh> lakeMeshes = new Dictionary<Renderer, LakeWaterMesh>();
         private readonly Dictionary<object, int> waterFeatureAtCoord = new Dictionary<object, int>();
@@ -268,23 +286,49 @@ namespace BioEden.NoDOF
                 cloudColors.Clear();
                 foreach (var effect in UnityEngine.Object.FindObjectsByType<VisualEffect>(FindObjectsInactive.Include, FindObjectsSortMode.None))
                 {
-                    if (effect == null || !effect.gameObject.name.Contains("Cloud", StringComparison.OrdinalIgnoreCase)) continue;
+                    if (effect == null || !IsEnvironmentalEffect(effect)) continue;
                     try
                     {
-                        if (!effect.HasVector4("Color")) continue;
-                        cloudColors.Add(effect, effect.GetVector4("Color"));
+                        var colors = new List<EnvironmentalColor>();
+                        foreach (string property in EnvironmentalColorProperties)
+                        {
+                            if (!effect.HasVector4(property)) continue;
+                            colors.Add(new EnvironmentalColor
+                            {
+                                Property = property,
+                                Original = effect.GetVector4(property)
+                            });
+                        }
+                        if (colors.Count > 0) cloudColors.Add(effect, colors);
                     }
                     catch (Exception e) { Debug.LogWarning("[BioEden.NoDOF] Cloud color read failed: " + e.Message); }
                 }
                 cloudScanDone = true;
-                Debug.Log("[BioEden.NoDOF] Cloud color controls: " + cloudColors.Count);
+                int propertyCount = 0;
+                foreach (var colors in cloudColors.Values) propertyCount += colors.Count;
+                Debug.Log("[BioEden.NoDOF] Environmental VFX color controls: effects=" + cloudColors.Count + ", properties=" + propertyCount);
             }
             foreach (var pair in cloudColors)
                 if (pair.Key != null)
                 {
-                    float luma = CloudColorMath.Luma(pair.Value.x, pair.Value.y, pair.Value.z);
-                    pair.Key.SetVector4("Color", new Vector4(luma, luma, luma, pair.Value.w));
+                    foreach (var color in pair.Value)
+                    {
+                        float luma = CloudColorMath.Luma(color.Original.x, color.Original.y, color.Original.z);
+                        pair.Key.SetVector4(color.Property, new Vector4(luma, luma, luma, color.Original.w));
+                    }
                 }
+        }
+
+        private static bool IsEnvironmentalEffect(VisualEffect effect)
+        {
+            string objectName = effect.gameObject.name;
+            string assetName = effect.visualEffectAsset == null ? string.Empty : effect.visualEffectAsset.name;
+            foreach (string keyword in EnvironmentalKeywords)
+            {
+                if (objectName.Contains(keyword, StringComparison.OrdinalIgnoreCase)) return true;
+                if (assetName.Contains(keyword, StringComparison.OrdinalIgnoreCase)) return true;
+            }
+            return false;
         }
 
         private void AddRenderersUnder(Type componentType)
@@ -349,7 +393,9 @@ namespace BioEden.NoDOF
             waterFeatures = null;
             player = null;
             foreach (var pair in cloudColors)
-                if (pair.Key != null) pair.Key.SetVector4("Color", pair.Value);
+                if (pair.Key != null)
+                    foreach (var color in pair.Value)
+                        pair.Key.SetVector4(color.Property, color.Original);
             cloudColors.Clear();
             cloudScanDone = false;
             foreach (var pair in cleanWaterMaterials)
