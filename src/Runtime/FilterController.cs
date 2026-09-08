@@ -28,9 +28,9 @@ namespace BioEden.NoDOF
         private MethodInfo playerPos2Coord;
         private PropertyInfo worldGridIndexer;
         private float nextPreserveRefresh;
-        private float nextWaterScan;
         private float lastSaturation = -1f;
         private bool preserveFeatureInstalled;
+        private bool waterScanDone;
         public static bool IsEnabled => filterEnabled;
 
         public static void Ensure()
@@ -163,15 +163,15 @@ namespace BioEden.NoDOF
             AddRenderersUnder(structureType);
             AddRenderersUnder(mineralType);
 
-            bool scanWater = forceWaterScan || Time.unscaledTime >= nextWaterScan;
+            bool scanWater = forceWaterScan || !waterScanDone;
             if (scanWater)
             {
-                nextWaterScan = Time.unscaledTime + 5f;
                 foreach (var renderer in UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None))
                 {
                     if (!renderer.enabled || renderer.gameObject.layer != LayerMask.NameToLayer("Water")) continue;
                     if (WaterIsPolluted(renderer)) AddPreservedRenderer(renderer);
                 }
+                waterScanDone = true;
             }
         }
 
@@ -196,7 +196,7 @@ namespace BioEden.NoDOF
             foreach (var pair in preservedLayers)
                 if (pair.Key != null) pair.Key.layer = pair.Value;
             preservedLayers.Clear();
-            nextWaterScan = 0f;
+            waterScanDone = false;
         }
 
         private bool WaterIsPolluted(Renderer renderer)
