@@ -25,9 +25,11 @@ namespace BioEden.NoDOF
         private Text label;
         private GameObject iconRoot;
         private PreserveColorFeature preserveFeature;
-        private Type playerType;
+        private Type playerType, pollutionManagerType;
         private object player;
+        private object pollutionManager;
         private MethodInfo playerPos2Coord;
+        private MethodInfo pollutionGetAt;
         private PropertyInfo worldGridIndexer;
         private float nextPreserveRefresh;
         private float lastSaturation = -1f;
@@ -280,6 +282,17 @@ namespace BioEden.NoDOF
             }
             if (player == null || playerPos2Coord == null) return false;
             object coord = playerPos2Coord.Invoke(player, new object[] { position });
+            if (pollutionManager == null)
+            {
+                pollutionManagerType = Type.GetType("Biomes.Pollution.PollutionManager, Assembly-CSharp");
+                pollutionManager = FindProperty(pollutionManagerType, "Singleton")?.GetValue(null);
+                pollutionGetAt = pollutionManagerType?.GetMethod("GetPollutionAt", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new[] { coord.GetType() }, null);
+            }
+            if (pollutionManager != null && pollutionGetAt != null)
+            {
+                value = Convert.ToSingle(pollutionGetAt.Invoke(pollutionManager, new[] { coord }));
+                return true;
+            }
             object grid = FindProperty(playerType, "WorldGrid")?.GetValue(player);
             if (grid == null) return false;
             if (worldGridIndexer == null) worldGridIndexer = FindIndexer(grid.GetType(), coord.GetType());
