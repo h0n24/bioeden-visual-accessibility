@@ -1,0 +1,22 @@
+{
+  "version": "1.3.0-beta.1",
+  "installed": true,
+  "gameVersion": "1.2.0.0",
+  "build": "PASS: zero warnings, zero errors",
+  "semanticVerification": {
+    "intendedHooks": 6,
+    "unchangedMethodBodies": 19572,
+    "originalDoFPath": "preserved exactly"
+  },
+  "geometryChecks": "PASS: original limits when disabled, smooth ordered pitch limits, 10000 reversed viewport clipping cases",
+  "installationTests": "PASS: upgrade, rollback, uninstall, clean install, legacy 1.0 and invalid files",
+  "featureChecks": [
+    "Extended Zoom suppresses DoF while active and restores the user's DoF preference when disabled.",
+    "Map desaturation uses the game's AdjustImage fullscreen material and leaves normal world interaction active.",
+    "The map filter icon is created only in the game world, placed before Help, and displays F1/F2/F3.",
+    "Only player structures and mineral renderers are redrawn in color; natural terrain and clean water remain desaturated.",
+    "Polluted water is selectively redrawn in color using the current WorldGrid pollution value.",
+    "The filter no longer applies an electric cyan tint or scans every renderer at sub-second intervals."
+  ],
+  "inGameVerification": "Pending user manual testing. Game was not started or controlled."
+}

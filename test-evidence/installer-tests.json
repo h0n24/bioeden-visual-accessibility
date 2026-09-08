@@ -1,0 +1,13 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Upgrade from fixed-Off v1: both libraries and runtime match expected hashes; original backups verified.",
+    "Repeated install and status verification succeed.",
+    "Uninstall restores both original libraries byte-for-byte and removes runtime; repeat succeeds.",
+    "Clean-original installation succeeds.",
+    "Install and uninstall reject an updated/changed game library without modifying it.",
+    "Corrupted original backup blocks uninstall without modifying installed files.",
+    "Unknown runtime blocks uninstall without removing it."
+  ],
+  "fixture": "D:\\Games\\BioEden-NoDOF-Menu\\build\\menu-test-6niddehb"
+}

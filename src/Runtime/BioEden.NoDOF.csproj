@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>BioEden.NoDOF</AssemblyName>
+    <Version>1.2.1</Version>
+    <GameManaged Condition="'$(GameManaged)' == ''">D:\Games\BioEden\BioEden_Data\Managed</GameManaged>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Bag.Heritage.Settings"><HintPath>$(GameManaged)\Bag.Heritage.Settings.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Bag.Heritage.Modifiers"><HintPath>$(GameManaged)\Bag.Heritage.Modifiers.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(GameManaged)\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.UI"><HintPath>$(GameManaged)\UnityEngine.UI.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.UIModule"><HintPath>$(GameManaged)\UnityEngine.UIModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.InputLegacyModule"><HintPath>$(GameManaged)\UnityEngine.InputLegacyModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.TextRenderingModule"><HintPath>$(GameManaged)\UnityEngine.TextRenderingModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Unity.RenderPipelines.Universal.Runtime"><HintPath>$(GameManaged)\Unity.RenderPipelines.Universal.Runtime.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>

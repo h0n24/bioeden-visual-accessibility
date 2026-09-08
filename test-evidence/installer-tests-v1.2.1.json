@@ -1,0 +1,22 @@
+{
+  "result": "PASS",
+  "version": "1.3.0-beta.1",
+  "initialHashes": {
+    "Assembly-CSharp.dll": "A55A3F3CBD5046385B73E9D82840E6F767FD9D4137DA58A5C7FFAD2E5BB364C1",
+    "Unity.RenderPipelines.Universal.Runtime.dll": "263D418DBCE7DC050C422C0289873A7C6DF2E425EF11829C8A15CB4C037684A2",
+    "BioEden.NoDOF.dll": null
+  },
+  "checks": [
+    "Forced replacement failure after partial upgrade rolls back both changed files to prior version.",
+    "Install from original: exact output hashes and untouched original backups.",
+    "Repeated installation is idempotent and status succeeds.",
+    "Uninstall restores original libraries exactly, removes runtime, and is idempotent.",
+    "Clean-original installation succeeds.",
+    "Unknown game library is rejected without changing it.",
+    "Corrupted original backup blocks uninstall.",
+    "Unknown runtime is preserved and rejected.",
+    "Direct upgrade from v1.0 fixed-Off patch and subsequent full uninstall succeed."
+  ],
+  "fixture": "D:\\Games\\BioEden-NoDOF-Menu\\build\\v121-test-j6nrs3vu",
+  "inGameTests": "User will test manually."
+}

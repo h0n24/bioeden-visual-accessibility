@@ -1,0 +1,22 @@
+{
+  "version": "1.2.0-beta.1",
+  "installed": true,
+  "structuralValidation": {
+    "gameMethodsChanged": [
+      "Biomes.Settings.SettingsManager.GetSettingsData",
+      "Biomes.Cam.CameraModuleZoom.get_ZoomOut",
+      "Biomes.HexGrid.HexAreaBorderManager.MoveBorder"
+    ],
+    "rendererMethodsChanged": [
+      "UnityEngine.Rendering.Universal.DepthOfField.IsActive"
+    ],
+    "otherMethodsUnchanged": 19574,
+    "originalDoFCodePreserved": true
+  },
+  "inGameValidation": {
+    "depthOfFieldMenu": "Confirmed working by user",
+    "antennaOutline": "Pending user manual test",
+    "extendedZoom": "Pending user manual test"
+  },
+  "automaticGameControlForVersion12": false
+}

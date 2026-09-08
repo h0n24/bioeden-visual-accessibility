@@ -1,0 +1,6 @@
+build/
+**/obj/
+*.NoDOF.original
+*.user
+*.suo
+settings-before-tests.bapp

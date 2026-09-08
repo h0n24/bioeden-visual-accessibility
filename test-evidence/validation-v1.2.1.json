@@ -1,0 +1,40 @@
+{
+  "version": "1.2.1-beta.2",
+  "installed": true,
+  "gameVersion": "1.2.0.0",
+  "build": "PASS: zero warnings, zero errors",
+  "semanticVerification": {
+    "unchangedMethodBodies": 19572,
+    "intendedHooks": 6,
+    "originalDoFPath": "preserved exactly"
+  },
+  "geometryChecks": "PASS: original limits when disabled, smooth ordered pitch limits, 10000 reversed viewport clipping cases",
+  "installationTests": "PASS: upgrade from 1.2 beta 1, rollback, uninstall, clean install, legacy 1.0, invalid files",
+  "inGameVerification": "Pending user manual testing. Game was not started or controlled.",
+  "changes": [
+    "Screen-space white/blue perimeter above fog camera effects",
+    "Smooth far-zoom pitch toward 70-82 degrees, original near view and Off behavior"
+  ],
+  "files": [
+    {
+      "name": "Assembly-CSharp.dll",
+      "original": "A55A3F3CBD5046385B73E9D82840E6F767FD9D4137DA58A5C7FFAD2E5BB364C1",
+      "patched": "72324323267C7D857B5BFA7EA6243ADB1CFB76DC336C9353DF723C47E035A90D",
+      "legacy": [
+        "7031F4E57A2B4C0F22B4E33AC814380DEB5F88B2E8CAC9713908D261C829B747",
+        "2CDB29700EF8ED3D86582E67E470CFA86E8CC3E510F8BC8497AED648EDC3DEC6"
+      ]
+    },
+    {
+      "name": "Unity.RenderPipelines.Universal.Runtime.dll",
+      "original": "263D418DBCE7DC050C422C0289873A7C6DF2E425EF11829C8A15CB4C037684A2",
+      "patched": "9CA8F1674C1E398C9F4CE1810B088E2DB83EBDF4A70A2F1E515A0105A6532009",
+      "legacy": [
+        "4800551FD5E6BBA905081CDC56FD2CAD47853D0ED92F5811FE961629AB13C2FE",
+        "A265A6AF18C30FFE57CD653DC385412D7C89EEEE7935C0CED455EF345D50944A",
+        "7AD2D419B645922A4EB449247B3DB3BBAAC17964BA72657C8094859697D8D62C"
+      ]
+    }
+  ],
+  "runtime": "BD4C8B28892822A238BB89EE54DEDECF238BAE4B73BAEA99FDCCBD3BC285D018"
+}

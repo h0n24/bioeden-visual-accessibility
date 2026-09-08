@@ -1,0 +1,16 @@
+{
+  "result": "PASS",
+  "checks": [
+    "Forced replacement failure after partial upgrade rolls back both changed files to prior version.",
+    "Upgrade from 1.1: exact output hashes and untouched original backups.",
+    "Repeated installation is idempotent and status succeeds.",
+    "Uninstall restores original libraries exactly, removes runtime, and is idempotent.",
+    "Clean-original installation succeeds.",
+    "Unknown game library is rejected without changing it.",
+    "Corrupted original backup blocks uninstall.",
+    "Unknown runtime is preserved and rejected.",
+    "Direct upgrade from v1.0 fixed-Off patch and subsequent full uninstall succeed."
+  ],
+  "fixture": "D:\\Games\\BioEden-NoDOF-Menu\\build\\v12-test-sw08p29b",
+  "inGameTests": "User will test manually."
+}
