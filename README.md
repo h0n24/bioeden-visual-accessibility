@@ -22,6 +22,16 @@ The antenna outline does not change range or building rules. It uses the same ge
 
 The map filter uses the game's existing fullscreen image adjustment with saturation set to zero. It does not open the game's planet-information mode, so building, selecting objects and following normal game markers remain available. The UI stays colored. The filter icon is created only after entering the game world, sits before Help and displays the active key. The filter is disabled after a fresh installation. When enabled, only player structures, mineral objects and polluted water are redrawn in color; grass, trees, rocks and clean water stay desaturated. The selective redraw avoids the full-scene performance cost of earlier builds. Extended Zoom suppresses Depth of Field while active and restores the user's Video setting when disabled.
 
+## Screenshots
+
+The screenshots below show the filter in the game world, while placing an antenna, and the added Accessibility settings.
+
+![Map Desaturation Filter](docs/images/map-filter-overview.png)
+
+![Map filter while placing an antenna](docs/images/map-filter-building.png)
+
+![Accessibility settings](docs/images/accessibility-settings.png)
+
 Extended Zoom applies to the normal world camera. It does not change the dome interior, topographic map or cinematic cameras. The original pitch is kept through the first half of the range; the second half smoothly moves toward a more top-down view. At maximum zoom the pitch range is 70–82° downward unless the original value is already higher. This reduces the unrendered horizon strip seen in earlier builds. Render distance is unchanged, and the automatic map transition remains at the end of the expanded range. Turning the setting off restores the original pitch and zoom limit.
 
 ## Installation and removal
