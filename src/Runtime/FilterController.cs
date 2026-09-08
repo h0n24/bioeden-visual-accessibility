@@ -15,7 +15,7 @@ namespace BioEden.NoDOF
         public const int PreserveLayer = 31;
         private static FilterController instance;
         private static bool filterEnabled;
-        private static bool firstSettingApplied;
+        private static bool startupGateComplete;
         private static int hotkey;
         private static readonly List<Material> materials = new List<Material>();
         private readonly Dictionary<GameObject, int> preservedLayers = new Dictionary<GameObject, int>();
@@ -46,12 +46,21 @@ namespace BioEden.NoDOF
         public static void SetEnabled(bool value)
         {
             Ensure();
-            // A saved value can be applied while Unity is still constructing the
-            // loading scene. Start every process with the filter off; later menu
-            // changes and the hotkey can enable it normally.
-            if (!firstSettingApplied)
+            bool inGame = instance.IsInGameWorld();
+            // Settings are also applied while the main menu and loading scenes are
+            // active. Persist those values through the game's settings system, but
+            // never enable the runtime filter before the playable map is ready.
+            if (!inGame)
             {
-                firstSettingApplied = true;
+                filterEnabled = false;
+                instance.RefreshIcon();
+                return;
+            }
+            // A saved On value must not make a fresh game start with the overlay.
+            // Once the first playable frame has passed, menu changes can apply it.
+            if (!startupGateComplete)
+            {
+                startupGateComplete = true;
                 filterEnabled = false;
                 instance.RefreshIcon();
                 return;
@@ -92,6 +101,12 @@ namespace BioEden.NoDOF
             {
                 if (iconRoot != null) iconRoot.SetActive(false);
                 return;
+            }
+
+            if (!startupGateComplete)
+            {
+                startupGateComplete = true;
+                filterEnabled = false;
             }
 
             if (iconRoot == null) CreateIcon();
@@ -291,15 +306,15 @@ namespace BioEden.NoDOF
                         ? UnityEngine.Object.FindObjectsByType(gameType, FindObjectsSortMode.None)[0]
                         : null;
                 if (game == null) return false;
-                bool loading = (bool?)gameType.GetProperty("IsLoading", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(game) ?? true;
                 object currentPlayer = gameType.GetProperty("Plyr", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(game);
                 object worldGrid = currentPlayer?.GetType().GetProperty("WorldGrid", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(currentPlayer);
                 object state = gameType.GetProperty("StateCurrent", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(game);
-                object gridInitialized = worldGrid?.GetType().GetProperty("Inited", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(worldGrid);
                 string stateName = state?.ToString();
                 bool playableState = stateName == "Play" || stateName == "PlayPost" || stateName == "Pause";
-                bool readyGrid = gridInitialized is bool initialized && initialized;
-                return !loading && playableState && currentPlayer != null && worldGrid != null && readyGrid;
+                // StateCurrent changes to Play only after the world has finished its
+                // loading sequence. IsLoading is still true briefly during the Play
+                // transition in this game version, so it cannot be used as the gate.
+                return playableState && currentPlayer != null && worldGrid != null;
             }
             catch { return false; }
         }
