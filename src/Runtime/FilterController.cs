@@ -284,20 +284,36 @@ namespace BioEden.NoDOF
             if (player == null || playerPos2Coord == null) return false;
             object coord = playerPos2Coord.Invoke(player, new object[] { position });
 
-            // GetPollutionAt is the biome-wide visual pollution value. It adds
-            // background biome pollution even when a lake/river's own
-            // poisonous value is zero, so it cannot answer the water question.
-            // Read the slot's PollutionNormalized value directly, matching the
-            // game's water-feature inspection code.
             object grid = FindProperty(playerType, "WorldGrid")?.GetValue(player);
             if (grid == null) return false;
             if (worldGridIndexer == null) worldGridIndexer = FindIndexer(grid.GetType(), coord.GetType());
             object slot = worldGridIndexer?.GetValue(grid, new[] { coord });
             if (slot == null) return false;
-            var normalized = FindProperty(slot.GetType(), "PollutionNormalized")?.GetValue(slot);
-            if (normalized == null) return false;
-            value = Convert.ToSingle(normalized);
-            return true;
+
+            // A renderer may cover many hexes. Resolve its feature first and
+            // inspect every coordinate in that feature, exactly like the game's
+            // water inspection code. GetPollutionAt cannot be used here because
+            // it includes biome-wide background pollution.
+            int featureIndex = Convert.ToInt32(FindField(slot.GetType(), "featureIndex")?.GetValue(slot) ?? -1);
+            object features = FindProperty(grid.GetType(), "Features")?.GetValue(grid);
+            if (featureIndex < 0 || !(features is Array featureArray) || featureIndex >= featureArray.Length) return false;
+            object feature = featureArray.GetValue(featureIndex);
+            var waterProperty = feature == null ? null : FindProperty(feature.GetType(), "IsWaterOrRiver");
+            if (feature == null || waterProperty == null || !Convert.ToBoolean(waterProperty.GetValue(feature))) return false;
+            object shape = FindField(feature.GetType(), "shape")?.GetValue(feature);
+            object coords = FindProperty(shape?.GetType(), "Coords")?.GetValue(shape);
+            if (!(coords is System.Collections.IEnumerable sequence)) return false;
+
+            bool found = false;
+            foreach (object featureCoord in sequence)
+            {
+                object featureSlot = worldGridIndexer.GetValue(grid, new[] { featureCoord });
+                var normalized = FindProperty(featureSlot?.GetType(), "PollutionNormalized")?.GetValue(featureSlot);
+                if (normalized == null) continue;
+                found = true;
+                value = Mathf.Max(value, Convert.ToSingle(normalized));
+            }
+            return found;
         }
 
         private bool IsInGameWorld()
