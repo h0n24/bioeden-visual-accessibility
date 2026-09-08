@@ -2,6 +2,8 @@
 
 Accessibility mod pro BioEden 1.2.0.0 (Unity 6000.0.56f2).
 
+Veřejný repozitář: <https://github.com/h0n24/bioeden-visual-accessibility> · [Releases](https://github.com/h0n24/bioeden-visual-accessibility/releases)
+
 ## Nastavení
 
 Všechny volby používají původní menu hry, šipky On / Off, tlačítko **Confirm**, ukládání nastavení a upozornění při odchodu bez uložení.
