@@ -14,6 +14,10 @@ namespace BioEden.NoDOF
     public sealed class FilterController : MonoBehaviour
     {
         public const int PreserveLayer = 31;
+        // The game's water inspection displays the feature average as a whole
+        // percentage (P0). Keep the same zero band so a feature shown as 0%
+        // is treated as clean even when its raw average is a tiny fraction.
+        private const float WaterDisplayZeroThreshold = 0.005f;
         private static FilterController instance;
         private static bool filterEnabled;
         private static bool startupGateComplete;
@@ -328,7 +332,7 @@ namespace BioEden.NoDOF
                     // samples are unknown and must not make clean water appear
                     // polluted. Use every valid slot we can resolve instead.
                     if (!TryGetWaterPollution(sample, out float pollution)) continue;
-                    if (pollution > 0.0001f) return true;
+                    if (pollution >= WaterDisplayZeroThreshold) return true;
                 }
                 return false;
             }
@@ -370,14 +374,18 @@ namespace BioEden.NoDOF
             if (!(coords is System.Collections.IEnumerable sequence)) return false;
 
             bool found = false;
+            float total = 0f;
+            int count = 0;
             foreach (object featureCoord in sequence)
             {
                 object featureSlot = worldGridIndexer.GetValue(grid, new[] { featureCoord });
                 var normalized = FindProperty(featureSlot?.GetType(), "PollutionNormalized")?.GetValue(featureSlot);
                 if (normalized == null) continue;
                 found = true;
-                value = Mathf.Max(value, Convert.ToSingle(normalized));
+                total += Convert.ToSingle(normalized);
+                count++;
             }
+            if (count > 0) value = total / count;
             return found;
         }
 
