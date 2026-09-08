@@ -275,8 +275,8 @@ namespace BioEden.NoDOF
                 playerType = Type.GetType("Biomes.Player, Assembly-CSharp");
                 var gameType = Type.GetType("Biomes.Game, Assembly-CSharp");
                 gameHubType = Type.GetType("Bag.Heritage.GameSystem.GameHub`2, Bag.Heritage.GameSystem")?.MakeGenericType(gameType, playerType);
-                object hub = gameHubType?.GetProperty("Singleton", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(null);
-                player = gameHubType?.GetProperty("Plyr", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(hub);
+                object hub = FindProperty(gameHubType, "Singleton")?.GetValue(null);
+                player = FindProperty(gameHubType, "Plyr")?.GetValue(hub);
                 playerPos2Coord = playerType?.GetMethod("Pos2Coord", BindingFlags.Instance | BindingFlags.Public);
             }
             if (player == null || playerPos2Coord == null) return false;
@@ -300,15 +300,15 @@ namespace BioEden.NoDOF
             if (gameType == null) return false;
             try
             {
-                object game = gameType.GetProperty("Singleton", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(null);
+                object game = FindProperty(gameType, "Singleton")?.GetValue(null);
                 if (game == null)
                     game = UnityEngine.Object.FindObjectsByType(gameType, FindObjectsSortMode.None).Length > 0
                         ? UnityEngine.Object.FindObjectsByType(gameType, FindObjectsSortMode.None)[0]
                         : null;
                 if (game == null) return false;
-                object currentPlayer = gameType.GetProperty("Plyr", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(game);
-                object worldGrid = currentPlayer?.GetType().GetProperty("WorldGrid", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(currentPlayer);
-                object state = gameType.GetProperty("StateCurrent", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(game);
+                object currentPlayer = FindProperty(gameType, "Plyr")?.GetValue(game);
+                object worldGrid = FindProperty(currentPlayer?.GetType(), "WorldGrid")?.GetValue(currentPlayer);
+                object state = FindProperty(gameType, "StateCurrent")?.GetValue(game);
                 string stateName = state?.ToString();
                 bool playableState = stateName == "Play" || stateName == "PlayPost" || stateName == "Pause";
                 // StateCurrent changes to Play only after the world has finished its
@@ -324,6 +324,17 @@ namespace BioEden.NoDOF
             while (type != null)
             {
                 var property = type.GetProperty("Item", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, null, new[] { argument }, null);
+                if (property != null) return property;
+                type = type.BaseType;
+            }
+            return null;
+        }
+
+        private static PropertyInfo FindProperty(Type type, string name)
+        {
+            while (type != null)
+            {
+                var property = type.GetProperty(name, BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
                 if (property != null) return property;
                 type = type.BaseType;
             }
