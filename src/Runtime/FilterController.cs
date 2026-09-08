@@ -15,9 +15,11 @@ namespace BioEden.NoDOF
         public const int PreserveLayer = 31;
         private static FilterController instance;
         private static bool filterEnabled;
+        private static bool firstSettingApplied;
         private static int hotkey;
         private static readonly List<Material> materials = new List<Material>();
         private readonly Dictionary<GameObject, int> preservedLayers = new Dictionary<GameObject, int>();
+        private readonly Dictionary<Camera, int> cameraMasks = new Dictionary<Camera, int>();
         private Button button;
         private Image icon;
         private Text label;
@@ -43,8 +45,18 @@ namespace BioEden.NoDOF
 
         public static void SetEnabled(bool value)
         {
-            filterEnabled = value;
             Ensure();
+            // A saved value can be applied while Unity is still constructing the
+            // loading scene. Start every process with the filter off; later menu
+            // changes and the hotkey can enable it normally.
+            if (!firstSettingApplied)
+            {
+                firstSettingApplied = true;
+                filterEnabled = false;
+                instance.RefreshIcon();
+                return;
+            }
+            filterEnabled = value;
             if (instance.IsInGameWorld())
             {
                 instance.RefreshMaterials(true);
@@ -96,12 +108,6 @@ namespace BioEden.NoDOF
                 nextPreserveRefresh = Time.unscaledTime + 2f;
                 RefreshPreservedObjects(false);
             }
-        }
-
-        private bool IsInGameWorld()
-        {
-            var type = Type.GetType("Biomes.Cam.CameraInputIngame, Assembly-CSharp");
-            return type != null && UnityEngine.Object.FindObjectsByType(type, FindObjectsSortMode.None).Length > 0;
         }
 
         private void RefreshMaterials(bool force)
@@ -158,14 +164,22 @@ namespace BioEden.NoDOF
         private void RefreshPreservedObjects(bool forceWaterScan)
         {
             if (!filterEnabled) { RestorePreservedLayers(); return; }
-            var structureType = Type.GetType("Biomes.Structures.StructureIngame, Assembly-CSharp");
-            var mineralType = Type.GetType("MineralHandler, Assembly-CSharp");
-            AddRenderersUnder(structureType);
-            AddRenderersUnder(mineralType);
+            EnsurePreserveCameras();
+            foreach (string typeName in new[]
+            {
+                "Biomes.Structures.StructureIngame",
+                "Biomes.Furnitures.FurnitureIngame",
+                "Biomes.Domes.DomeIngame",
+                "Biomes.Domes.DomeSpaceIngame",
+                "Biomes.TechSanctuaries.TechSanctuaryInGame",
+                "MineralHandler"
+            }) AddRenderersUnder(Type.GetType(typeName + ", Assembly-CSharp"));
 
             bool scanWater = forceWaterScan || !waterScanDone;
             if (scanWater)
             {
+                foreach (string typeName in new[] { "LakePolygon", "RamSpline" })
+                    AddPollutedWaterUnder(Type.GetType(typeName + ", Assembly-CSharp"));
                 foreach (var renderer in UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None))
                 {
                     if (!renderer.enabled || renderer.gameObject.layer != LayerMask.NameToLayer("Water")) continue;
@@ -183,6 +197,25 @@ namespace BioEden.NoDOF
                     foreach (var renderer in component.GetComponentsInChildren<Renderer>(true)) AddPreservedRenderer(renderer);
         }
 
+        private void AddPollutedWaterUnder(Type componentType)
+        {
+            if (componentType == null) return;
+            foreach (var obj in UnityEngine.Object.FindObjectsByType(componentType, FindObjectsSortMode.None))
+                if (obj is Component component)
+                    foreach (var renderer in component.GetComponentsInChildren<Renderer>(true))
+                        if (WaterIsPolluted(renderer)) AddPreservedRenderer(renderer);
+        }
+
+        private void EnsurePreserveCameras()
+        {
+            int bit = 1 << PreserveLayer;
+            foreach (var camera in UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsSortMode.None))
+            {
+                if (!cameraMasks.ContainsKey(camera)) cameraMasks.Add(camera, camera.cullingMask);
+                camera.cullingMask |= bit;
+            }
+        }
+
         private void AddPreservedRenderer(Renderer renderer)
         {
             if (renderer == null || renderer.gameObject.layer == LayerMask.NameToLayer("UI")) return;
@@ -196,6 +229,9 @@ namespace BioEden.NoDOF
             foreach (var pair in preservedLayers)
                 if (pair.Key != null) pair.Key.layer = pair.Value;
             preservedLayers.Clear();
+            foreach (var pair in cameraMasks)
+                if (pair.Key != null) pair.Key.cullingMask = pair.Value;
+            cameraMasks.Clear();
             waterScanDone = false;
         }
 
@@ -223,6 +259,31 @@ namespace BioEden.NoDOF
                 return pollution == null || ((Vector2)pollution).x > 0.0001f;
             }
             catch { return true; }
+        }
+
+        private bool IsInGameWorld()
+        {
+            var cameraType = Type.GetType("Biomes.Cam.CameraInputIngame, Assembly-CSharp");
+            if (cameraType == null || UnityEngine.Object.FindObjectsByType(cameraType, FindObjectsSortMode.None).Length == 0) return false;
+            var gameType = Type.GetType("Biomes.Game, Assembly-CSharp");
+            if (gameType == null) return false;
+            try
+            {
+                object game = gameType.GetProperty("Singleton", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(null);
+                if (game == null)
+                    game = UnityEngine.Object.FindObjectsByType(gameType, FindObjectsSortMode.None).Length > 0
+                        ? UnityEngine.Object.FindObjectsByType(gameType, FindObjectsSortMode.None)[0]
+                        : null;
+                if (game == null) return false;
+                bool loading = (bool?)gameType.GetProperty("IsLoading", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(game) ?? true;
+                object currentPlayer = gameType.GetProperty("Plyr", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(game);
+                object worldGrid = currentPlayer?.GetType().GetProperty("WorldGrid", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(currentPlayer);
+                object state = gameType.GetProperty("StateCurrent", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(game);
+                string stateName = state?.ToString();
+                bool playableState = stateName == "Play" || stateName == "PlayPost" || stateName == "Pause";
+                return !loading && playableState && currentPlayer != null && worldGrid != null;
+            }
+            catch { return false; }
         }
 
         private static PropertyInfo FindIndexer(Type type, Type argument)
