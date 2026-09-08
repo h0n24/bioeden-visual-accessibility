@@ -25,11 +25,9 @@ namespace BioEden.NoDOF
         private Text label;
         private GameObject iconRoot;
         private PreserveColorFeature preserveFeature;
-        private Type playerType, pollutionManagerType;
+        private Type playerType;
         private object player;
-        private object pollutionManager;
         private MethodInfo playerPos2Coord;
-        private MethodInfo pollutionGetAt;
         private PropertyInfo worldGridIndexer;
         private float nextPreserveRefresh;
         private float lastSaturation = -1f;
@@ -261,15 +259,18 @@ namespace BioEden.NoDOF
                 Vector3 z = Vector3.forward * bounds.extents.z * 0.65f;
                 foreach (Vector3 sample in new[] { bounds.center, bounds.center + x, bounds.center - x, bounds.center + z, bounds.center - z })
                 {
-                    if (!TryGetPollution(sample, out float pollution)) return true;
+                    // Renderer bounds can extend beyond the playable grid. Those
+                    // samples are unknown and must not make clean water appear
+                    // polluted. Use every valid slot we can resolve instead.
+                    if (!TryGetWaterPollution(sample, out float pollution)) continue;
                     if (pollution > 0.0001f) return true;
                 }
                 return false;
             }
-            catch { return true; }
+            catch { return false; }
         }
 
-        private bool TryGetPollution(Vector3 position, out float value)
+        private bool TryGetWaterPollution(Vector3 position, out float value)
         {
             value = 0f;
             if (player == null)
@@ -282,25 +283,20 @@ namespace BioEden.NoDOF
             }
             if (player == null || playerPos2Coord == null) return false;
             object coord = playerPos2Coord.Invoke(player, new object[] { position });
-            if (pollutionManager == null)
-            {
-                pollutionManagerType = Type.GetType("Biomes.Pollution.PollutionManager, Assembly-CSharp");
-                pollutionManager = FindProperty(pollutionManagerType, "Singleton")?.GetValue(null);
-                pollutionGetAt = pollutionManagerType?.GetMethod("GetPollutionAt", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new[] { coord.GetType() }, null);
-            }
-            if (pollutionManager != null && pollutionGetAt != null)
-            {
-                value = Convert.ToSingle(pollutionGetAt.Invoke(pollutionManager, new[] { coord }));
-                return true;
-            }
+
+            // GetPollutionAt is the biome-wide visual pollution value. It adds
+            // background biome pollution even when a lake/river's own
+            // poisonous value is zero, so it cannot answer the water question.
+            // Read the slot's PollutionNormalized value directly, matching the
+            // game's water-feature inspection code.
             object grid = FindProperty(playerType, "WorldGrid")?.GetValue(player);
             if (grid == null) return false;
             if (worldGridIndexer == null) worldGridIndexer = FindIndexer(grid.GetType(), coord.GetType());
             object slot = worldGridIndexer?.GetValue(grid, new[] { coord });
             if (slot == null) return false;
-            var pollution = slot.GetType().GetField("pollution", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(slot);
-            if (pollution == null) return false;
-            value = ((Vector2)pollution).x;
+            var normalized = FindProperty(slot.GetType(), "PollutionNormalized")?.GetValue(slot);
+            if (normalized == null) return false;
+            value = Convert.ToSingle(normalized);
             return true;
         }
 
