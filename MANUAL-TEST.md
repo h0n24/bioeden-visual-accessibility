@@ -34,6 +34,9 @@ The current build is installed locally. Start BioEden normally. New options are 
 - Compare camera movement and scrolling with the filter Off and On. There must be no severe FPS drop or continuous high load during normal movement.
 - Toggle the filter with both the key and the icon labelled **F1** immediately before **?** in the top-right corner. After changing the binding, the icon must show F2 or F3. Blue means enabled and gray means disabled. The icon must be absent from the main menu and Settings and must not overlap Help.
 - Find a clean lake or river with **0% pollution** and verify that it remains desaturated. Then find polluted water and verify that it remains colored.
+- Check a clean lake and a polluted lake visible together: they may share one generated mesh but must have different filter states. Check the small pool and falling water at the spring of both a clean and polluted river, including the rocks around each spring (rocks must stay gray).
+- Leave F1 enabled while a cleaner finishes. Within two seconds of the displayed pollution reaching **0%**, the lake or river and its spring should become gray without toggling F1 again.
+- Toggle F1 off/on several times, then leave for the main menu and load the map again. Water geometry must not disappear or duplicate, original colors must return with F1 off, and the next load must start with the filter off.
 - Open the game's planet-information mode and then start building. The new filter must remain independent and must not prevent normal building.
 - With **Extended Zoom** active, set **Depth of Field → On**. The distant view should remain sharp. After disabling Extended Zoom, Depth of Field should follow the Video setting again.
 

@@ -25,7 +25,14 @@ namespace BioEden.NoDOF
         private static readonly List<Material> materials = new List<Material>();
         private readonly Dictionary<GameObject, int> preservedLayers = new Dictionary<GameObject, int>();
         private readonly Dictionary<Camera, int> cameraMasks = new Dictionary<Camera, int>();
-        private readonly Dictionary<Renderer, Material> cleanWaterMaterials = new Dictionary<Renderer, Material>();
+        private readonly Dictionary<Renderer, Material[]> cleanWaterMaterials = new Dictionary<Renderer, Material[]>();
+        private readonly List<Material> waterMaterialClones = new List<Material>();
+        private readonly List<Renderer> waterRenderers = new List<Renderer>();
+        private readonly Dictionary<Renderer, LakeWaterMesh> lakeMeshes = new Dictionary<Renderer, LakeWaterMesh>();
+        private readonly Dictionary<object, int> waterFeatureAtCoord = new Dictionary<object, int>();
+        private readonly Dictionary<int, float> waterPollution = new Dictionary<int, float>();
+        private object waterGrid;
+        private Array waterFeatures;
         private Button button;
         private Image icon;
         private Text label;
@@ -106,6 +113,12 @@ namespace BioEden.NoDOF
             if (!inGame)
             {
                 if (iconRoot != null) iconRoot.SetActive(false);
+                if (waterScanDone)
+                {
+                    filterEnabled = false;
+                    RefreshMaterials(true);
+                    RestorePreservedLayers();
+                }
                 return;
             }
 
@@ -196,18 +209,52 @@ namespace BioEden.NoDOF
                 "MineralHandler"
             }) AddRenderersUnder(Type.GetType(typeName + ", Assembly-CSharp"));
 
-            bool scanWater = forceWaterScan || !waterScanDone;
-            if (scanWater)
+            RefreshWaterContext();
+            waterPollution.Clear();
+            if (forceWaterScan || !waterScanDone)
             {
-                foreach (string typeName in new[] { "LakePolygon", "RamSpline" })
-                    AddPollutedWaterUnder(Type.GetType(typeName + ", Assembly-CSharp"));
-                foreach (var renderer in UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+                waterRenderers.Clear();
+                int lakeCount = 0, sourceCount = 0;
+                foreach (var renderer in UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
                 {
-                    if (!renderer.enabled || renderer.gameObject.layer != LayerMask.NameToLayer("Water")) continue;
-                    SetWaterRendererPreservation(renderer, WaterIsPolluted(renderer));
+                    if (renderer == null) continue;
+                    bool lake = false, water = false;
+                    foreach (var material in renderer.sharedMaterials)
+                    {
+                        if (material == null) continue;
+                        // These are the actual generated terrain water materials,
+                        // including source rings on the Default layer. Building
+                        // water/glass materials deliberately do not match.
+                        if (WaterMaterialNames.IsLake(material.name)) lake = true;
+                        if (WaterMaterialNames.IsWater(material.name)) water = true;
+                        if (WaterMaterialNames.IsSource(material.name)) sourceCount++;
+                    }
+                    if (!water) continue;
+                    if (lake)
+                    {
+                        if (!lakeMeshes.ContainsKey(renderer))
+                        {
+                            try { lakeMeshes.Add(renderer, new LakeWaterMesh(renderer, ResolveWaterFeature, CreateGrayscaleWaterMaterial)); }
+                            catch (Exception e) { Debug.LogError("[BioEden.NoDOF] Lake mesh: " + e.Message); }
+                        }
+                        lakeCount++;
+                    }
+                    else waterRenderers.Add(renderer);
                 }
+                Debug.Log("[BioEden.NoDOF] Water discovery: lakes=" + lakeCount + ", river/source renderers=" + waterRenderers.Count + ", source rings=" + sourceCount);
                 waterScanDone = true;
             }
+            foreach (var pair in lakeMeshes)
+            {
+                if (pair.Key == null) continue;
+                pair.Value.Refresh(f => TryGetFeaturePollution(f, out float amount) && amount < WaterDisplayZeroThreshold);
+                // Both lake material slots must reach the same color pass. Clean
+                // triangles already use the grayscale palette; polluted ones use
+                // the unmodified palette. Never redraw the original mixed mesh.
+                AddPreservedRenderer(pair.Key);
+            }
+            foreach (var renderer in waterRenderers)
+                if (renderer != null) SetWaterRendererPreservation(renderer, WaterIsPolluted(renderer));
         }
 
         private void AddRenderersUnder(Type componentType)
@@ -216,15 +263,6 @@ namespace BioEden.NoDOF
             foreach (var obj in UnityEngine.Object.FindObjectsByType(componentType, FindObjectsSortMode.None))
                 if (obj is Component component)
                     foreach (var renderer in component.GetComponentsInChildren<Renderer>(true)) AddPreservedRenderer(renderer);
-        }
-
-        private void AddPollutedWaterUnder(Type componentType)
-        {
-            if (componentType == null) return;
-            foreach (var obj in UnityEngine.Object.FindObjectsByType(componentType, FindObjectsSortMode.None))
-                if (obj is Component component)
-                    foreach (var renderer in component.GetComponentsInChildren<Renderer>(true))
-                        SetWaterRendererPreservation(renderer, WaterIsPolluted(renderer));
         }
 
         private void EnsurePreserveCameras()
@@ -251,7 +289,10 @@ namespace BioEden.NoDOF
             if (preserve)
             {
                 RestoreCleanWaterMaterial(renderer);
-                AddPreservedRenderer(renderer);
+                // Source prefabs mix stone and water submeshes. Their water
+                // material already retains color under AdjustImage; do not
+                // redraw the whole prefab and accidentally color its stones.
+                if (!IsWaterSource(renderer)) AddPreservedRenderer(renderer);
                 return;
             }
 
@@ -269,16 +310,21 @@ namespace BioEden.NoDOF
 
         private void RestorePreservedLayers()
         {
+            foreach (var lake in lakeMeshes.Values) lake.Dispose();
+            lakeMeshes.Clear();
+            waterRenderers.Clear();
+            waterFeatureAtCoord.Clear();
+            waterPollution.Clear();
+            waterGrid = null;
+            waterFeatures = null;
+            player = null;
             foreach (var pair in cleanWaterMaterials)
             {
-                if (pair.Key != null)
-                {
-                    var clone = pair.Key.sharedMaterial;
-                    pair.Key.sharedMaterial = pair.Value;
-                    if (clone != null && clone != pair.Value) Destroy(clone);
-                }
+                if (pair.Key != null) pair.Key.sharedMaterials = pair.Value;
             }
             cleanWaterMaterials.Clear();
+            foreach (var clone in waterMaterialClones) if (clone != null) Destroy(clone);
+            waterMaterialClones.Clear();
             foreach (var pair in preservedLayers)
                 if (pair.Key != null) pair.Key.layer = pair.Value;
             preservedLayers.Clear();
@@ -290,8 +336,21 @@ namespace BioEden.NoDOF
 
         private void ApplyCleanWaterMaterial(Renderer renderer)
         {
-            if (cleanWaterMaterials.ContainsKey(renderer) || renderer.sharedMaterial == null) return;
-            var original = renderer.sharedMaterial;
+            if (cleanWaterMaterials.ContainsKey(renderer)) return;
+            var originals = renderer.sharedMaterials;
+            var assigned = (Material[])originals.Clone();
+            for (int i = 0; i < assigned.Length; i++)
+            {
+                if (assigned[i] == null || !WaterMaterialNames.IsWater(assigned[i].name)) continue;
+                assigned[i] = CreateGrayscaleWaterMaterial(assigned[i]);
+                waterMaterialClones.Add(assigned[i]);
+            }
+            cleanWaterMaterials.Add(renderer, originals);
+            renderer.sharedMaterials = assigned;
+        }
+
+        private static Material CreateGrayscaleWaterMaterial(Material original)
+        {
             var clone = new Material(original) { name = original.name + " (BioEden grayscale water)" };
             var shader = clone.shader;
             if (shader != null)
@@ -306,23 +365,42 @@ namespace BioEden.NoDOF
                 }
                 if (clone.HasProperty("_Saturation")) clone.SetFloat("_Saturation", 0f);
             }
-            cleanWaterMaterials.Add(renderer, original);
-            renderer.sharedMaterial = clone;
+            return clone;
         }
 
         private void RestoreCleanWaterMaterial(Renderer renderer)
         {
-            if (renderer == null || !cleanWaterMaterials.TryGetValue(renderer, out Material original)) return;
-            var clone = renderer.sharedMaterial;
-            renderer.sharedMaterial = original;
+            if (renderer == null || !cleanWaterMaterials.TryGetValue(renderer, out Material[] originals)) return;
+            var assigned = renderer.sharedMaterials;
+            renderer.sharedMaterials = originals;
             cleanWaterMaterials.Remove(renderer);
-            if (clone != null && clone != original) Destroy(clone);
+            foreach (var clone in assigned)
+                if (clone != null && waterMaterialClones.Remove(clone)) Destroy(clone);
+        }
+
+        private static bool IsWaterSource(Renderer renderer)
+        {
+            foreach (var material in renderer.sharedMaterials)
+                if (material != null && WaterMaterialNames.IsSource(material.name)) return true;
+            return false;
         }
 
         private bool WaterIsPolluted(Renderer renderer)
         {
             try
             {
+                // Spring prefabs and waterfall rings are children of the river;
+                // its small bounds can land on the surrounding stone/land hex.
+                // Use its owning river surface to decide the source state.
+                if (IsWaterSource(renderer))
+                {
+                    for (var parent = renderer.transform.parent; parent != null; parent = parent.parent)
+                    {
+                        var owner = parent.GetComponent<Renderer>();
+                        if (owner != null && owner.sharedMaterial != null && owner.sharedMaterial.name.StartsWith("Mat_Terrain_Water_River", StringComparison.Ordinal))
+                            return WaterIsPolluted(owner);
+                    }
+                }
                 Bounds bounds = renderer.bounds;
                 Vector3 x = Vector3.right * bounds.extents.x * 0.65f;
                 Vector3 z = Vector3.forward * bounds.extents.z * 0.65f;
@@ -339,54 +417,69 @@ namespace BioEden.NoDOF
             catch { return false; }
         }
 
+        private void RefreshWaterContext()
+        {
+            var gameType = Type.GetType("Biomes.Game, Assembly-CSharp");
+            object game = FindProperty(gameType, "Singleton")?.GetValue(null);
+            player = FindProperty(gameType, "Plyr")?.GetValue(game);
+            playerType = player?.GetType();
+            playerPos2Coord = playerType?.GetMethod("Pos2Coord", BindingFlags.Instance | BindingFlags.Public);
+            object grid = FindProperty(playerType, "WorldGrid")?.GetValue(player);
+            if (!ReferenceEquals(grid, waterGrid)) waterFeatureAtCoord.Clear();
+            waterGrid = grid;
+            waterFeatures = FindProperty(grid?.GetType(), "Features")?.GetValue(grid) as Array;
+        }
+
+        private int ResolveWaterFeature(Vector3 position)
+        {
+            if (waterGrid == null || playerPos2Coord == null || waterFeatures == null) return -1;
+            object coord = playerPos2Coord.Invoke(player, new object[] { position });
+            if (waterFeatureAtCoord.TryGetValue(coord, out int cached)) return cached;
+            if (worldGridIndexer == null) worldGridIndexer = FindIndexer(waterGrid.GetType(), coord.GetType());
+            int result = -1;
+            try
+            {
+                object slot = worldGridIndexer?.GetValue(waterGrid, new[] { coord });
+                int index = Convert.ToInt32(FindField(slot?.GetType(), "featureIndex")?.GetValue(slot) ?? -1);
+                if (index >= 0 && index < waterFeatures.Length)
+                {
+                    object feature = waterFeatures.GetValue(index);
+                    if (Convert.ToBoolean(FindProperty(feature.GetType(), "IsWaterOrRiver")?.GetValue(feature) ?? false)) result = index;
+                }
+            }
+            catch (TargetInvocationException) { /* A border triangle may lie outside the grid. */ }
+            waterFeatureAtCoord[coord] = result;
+            return result;
+        }
+
         private bool TryGetWaterPollution(Vector3 position, out float value)
         {
+            return TryGetFeaturePollution(ResolveWaterFeature(position), out value);
+        }
+
+        private bool TryGetFeaturePollution(int index, out float value)
+        {
             value = 0f;
-            if (player == null)
-            {
-                playerType = Type.GetType("Biomes.Player, Assembly-CSharp");
-                var gameType = Type.GetType("Biomes.Game, Assembly-CSharp");
-                object game = FindProperty(gameType, "Singleton")?.GetValue(null);
-                player = FindProperty(gameType, "Plyr")?.GetValue(game);
-                playerPos2Coord = playerType?.GetMethod("Pos2Coord", BindingFlags.Instance | BindingFlags.Public);
-            }
-            if (player == null || playerPos2Coord == null) return false;
-            object coord = playerPos2Coord.Invoke(player, new object[] { position });
-
-            object grid = FindProperty(playerType, "WorldGrid")?.GetValue(player);
-            if (grid == null) return false;
-            if (worldGridIndexer == null) worldGridIndexer = FindIndexer(grid.GetType(), coord.GetType());
-            object slot = worldGridIndexer?.GetValue(grid, new[] { coord });
-            if (slot == null) return false;
-
-            // A renderer may cover many hexes. Resolve its feature first and
-            // inspect every coordinate in that feature, exactly like the game's
-            // water inspection code. GetPollutionAt cannot be used here because
-            // it includes biome-wide background pollution.
-            int featureIndex = Convert.ToInt32(FindField(slot.GetType(), "featureIndex")?.GetValue(slot) ?? -1);
-            object features = FindProperty(grid.GetType(), "Features")?.GetValue(grid);
-            if (featureIndex < 0 || !(features is Array featureArray) || featureIndex >= featureArray.Length) return false;
-            object feature = featureArray.GetValue(featureIndex);
-            var waterProperty = feature == null ? null : FindProperty(feature.GetType(), "IsWaterOrRiver");
-            if (feature == null || waterProperty == null || !Convert.ToBoolean(waterProperty.GetValue(feature))) return false;
+            if (index < 0 || waterFeatures == null || index >= waterFeatures.Length) return false;
+            if (waterPollution.TryGetValue(index, out value)) return true;
+            object feature = waterFeatures.GetValue(index);
             object shape = FindField(feature.GetType(), "shape")?.GetValue(feature);
-            object coords = FindProperty(shape?.GetType(), "Coords")?.GetValue(shape);
-            if (!(coords is System.Collections.IEnumerable sequence)) return false;
-
-            bool found = false;
+            var coords = FindProperty(shape?.GetType(), "Coords")?.GetValue(shape) as System.Collections.IEnumerable;
+            if (coords == null || worldGridIndexer == null) return false;
             float total = 0f;
             int count = 0;
-            foreach (object featureCoord in sequence)
+            foreach (object coord in coords)
             {
-                object featureSlot = worldGridIndexer.GetValue(grid, new[] { featureCoord });
-                var normalized = FindProperty(featureSlot?.GetType(), "PollutionNormalized")?.GetValue(featureSlot);
-                if (normalized == null) continue;
-                found = true;
+                object slot = worldGridIndexer.GetValue(waterGrid, new[] { coord });
+                var normalized = FindProperty(slot?.GetType(), "PollutionNormalized")?.GetValue(slot);
+                if (normalized == null) return false;
                 total += Convert.ToSingle(normalized);
                 count++;
             }
-            if (count > 0) value = total / count;
-            return found;
+            if (count == 0) return false;
+            value = total / count;
+            waterPollution[index] = value;
+            return true;
         }
 
         private bool IsInGameWorld()

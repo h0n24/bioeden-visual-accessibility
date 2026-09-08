@@ -3,6 +3,7 @@ using Mono.Cecil.Cil;
 
 string managed = args[0];
 GeometryChecks.Run();
+WaterChecks.Run();
 IEnumerable<TypeDefinition> Types(IEnumerable<TypeDefinition> types) => types.SelectMany(t => new[] {t}.Concat(Types(t.NestedTypes)));
 string Operand(object operand, Mono.Cecil.Cil.MethodBody body) => operand switch {
     null => "", Instruction i => "ILINDEX:" + body.Instructions.IndexOf(i),
