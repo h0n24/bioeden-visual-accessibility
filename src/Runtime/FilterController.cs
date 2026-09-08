@@ -206,7 +206,7 @@ namespace BioEden.NoDOF
                 if (player == null)
                 {
                     playerType = Type.GetType("Biomes.Player, Assembly-CSharp");
-                    var gameType = Type.GetType("Bag.GameHub.Game, Bag.GameHub");
+                    var gameType = Type.GetType("Biomes.Game, Assembly-CSharp");
                     gameHubType = Type.GetType("Bag.Heritage.GameSystem.GameHub`2, Bag.Heritage.GameSystem")?.MakeGenericType(gameType, playerType);
                     object hub = gameHubType?.GetProperty("Singleton", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(null);
                     player = gameHubType?.GetProperty("Plyr", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(hub);
