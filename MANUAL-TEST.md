@@ -1,4 +1,4 @@
-# Manual test plan – version 1.3.0 beta 1
+# Manual test plan – version 1.3.0 beta 2
 
 The current build is installed locally. Start BioEden normally. New options are under **Settings → Accessibility**; the original Depth of Field setting remains under **Video**.
 
@@ -31,6 +31,7 @@ The current build is installed locally. Start BioEden normally. New options are 
 - In **Accessibility**, set **Map Desaturation Filter → On**, choose **Map Filter Hotkey → F1** (or F2/F3), and press **Confirm**.
 - On a clean installation, verify that the filter is **Off** and the game starts normally. The filter icon must not appear during the loading screen.
 - In the game, toggle the filter. Player structures and mineral objects should remain colored; grass, trees, rocks and clean water should remain desaturated. Building, selecting objects and normal markers must remain usable. The UI may remain colored.
+- Check map cloud effects such as the colored orange/green patches in the reference screenshot. They should become grayscale with F1 enabled, while buildings, minerals and polluted water remain colored. Toggle F1 off and confirm the original cloud colors return.
 - Compare camera movement and scrolling with the filter Off and On. There must be no severe FPS drop or continuous high load during normal movement.
 - Toggle the filter with both the key and the icon labelled **F1** immediately before **?** in the top-right corner. After changing the binding, the icon must show F2 or F3. Blue means enabled and gray means disabled. The icon must be absent from the main menu and Settings and must not overlap Help.
 - Find a clean lake or river with **0% pollution** and verify that it remains desaturated. Then find polluted water and verify that it remains colored.

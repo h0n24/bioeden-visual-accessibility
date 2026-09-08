@@ -1,4 +1,4 @@
-# BioEden – Visual Accessibility 1.3.0 beta 1
+# BioEden – Visual Accessibility 1.3.0 beta 2
 
 A Windows accessibility mod for BioEden 1.2.0.0 (Unity 6000.0.56f2).
 
@@ -20,7 +20,7 @@ Press **Confirm** after changing a value. A restart is not required. Saved value
 
 The antenna outline does not change range or building rules. It uses the same geometry as the game's original border and follows its movement and visibility. Version 1.2.1 projects the border into a screen-space layer above the fog effect: the white line is 5.5 pixels wide and the blue center is 2 pixels wide. The line is intentionally visible over obstacles and unexplored blue areas. It does not capture input and stays below normal menu overlays. Turning the setting off removes the added outline.
 
-The map filter uses the game's existing fullscreen image adjustment with saturation set to zero. It does not open the game's planet-information mode, so building, selecting objects and following normal game markers remain available. The UI stays colored. The filter icon is created only after entering the game world, sits before Help and displays the active key. The filter is disabled after a fresh installation. When enabled, only player structures, mineral objects and polluted water are redrawn in color; grass, trees, rocks and clean water stay desaturated. The selective redraw avoids the full-scene performance cost of earlier builds. Extended Zoom suppresses Depth of Field while active and restores the user's Video setting when disabled.
+The map filter uses the game's existing fullscreen image adjustment with saturation set to zero. It does not open the game's planet-information mode, so building, selecting objects and following normal game markers remain available. The UI stays colored. The filter icon is created only after entering the game world, sits before Help and displays the active key. The filter is disabled after a fresh installation. When enabled, only player structures, mineral objects and polluted water are redrawn in color; grass, trees, rocks, clean water and map cloud VFX stay desaturated. The selective redraw avoids the full-scene performance cost of earlier builds. Extended Zoom suppresses Depth of Field while active and restores the user's Video setting when disabled.
 
 ## Screenshots
 
@@ -61,6 +61,7 @@ A game update or file verification may require a new patch version. Do not copy 
 - Semantic verification confirms six intended game hooks; the other 19,572 method bodies remain unchanged.
 - Zoom restoration, smooth pitch limits and screen-space segment clipping passed, including 10,000 reversed segments.
 - **Selective building/material colors, clean versus polluted water, filter performance, automatic DoF suppression with Extended Zoom and the in-game icon still require manual testing.** See `MANUAL-TEST.md`.
+- Cloud VFX color controls are converted to luminance while the filter is enabled and restored when it is disabled.
 
 If the added layer or expected geometry fails, the mod keeps the original border and writes a `[BioEden.NoDOF]` entry to `Player.log`. Each border is limited to 8,000 visible screen-space segments to stay within Unity UI geometry limits.
 

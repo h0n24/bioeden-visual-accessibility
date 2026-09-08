@@ -36,13 +36,13 @@ $runtimeExists = Test-Path -LiteralPath $runtime
 $runtimeCurrent = if ($runtimeExists) { Hash $runtime } else { '' }
 if ($runtimeExists -and $runtimeCurrent -notin (@($m.runtime) + @($m.previousRuntime))) { throw 'The existing mod runtime has an unknown version. No game files changed.' }
 if ($Action -eq 'Status') {
-    if ($allPatched -and $runtimeCurrent -eq $m.runtime) { Write-Host 'BioEden visual accessibility 1.3.0 is INSTALLED. Settings: Video > Depth of Field; Accessibility > Antenna Range Outline / Extended Zoom / Map Desaturation Filter / Map Filter Hotkey.' }
+    if ($allPatched -and $runtimeCurrent -eq $m.runtime) { Write-Host "BioEden visual accessibility $($m.version) is INSTALLED. Settings: Video > Depth of Field; Accessibility > Antenna Range Outline / Extended Zoom / Map Desaturation Filter / Map Filter Hotkey." }
     elseif ($allOriginal -and !$runtimeExists) { Write-Host 'NoDOF menu toggle is NOT installed. Game libraries are original.' }
     else { Write-Host 'Legacy or partial NoDOF installation detected. Install upgrades it; Uninstall restores the game.' }
     return
 }
 CheckClosed
-if ($Action -eq 'Install' -and $allPatched -and $runtimeCurrent -eq $m.runtime) { Write-Host 'Visual accessibility 1.3.0 is already installed and verified.'; return }
+if ($Action -eq 'Install' -and $allPatched -and $runtimeCurrent -eq $m.runtime) { Write-Host "Visual accessibility $($m.version) is already installed and verified."; return }
 if ($Action -eq 'Uninstall' -and $allOriginal -and !$runtimeExists) { Write-Host 'Original game is already restored.'; return }
 if ($Action -eq 'Install') {
     foreach ($p in $m.payload) {

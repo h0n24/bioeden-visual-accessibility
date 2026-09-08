@@ -17,3 +17,7 @@ The filter discovers terrain-water materials across layers and includes inactive
 Lake triangles are mapped to water features once when F1 is enabled. A temporary mesh groups their original indices into original-color and grayscale material slots. Vertices, UVs, vertex colors, triangle winding and bounds are retained. Feature pollution is refreshed every two seconds, once per feature, and indices are rebuilt only when classification changes. Original meshes and materials are restored when the filter is disabled or the playable world is left.
 
 The automated geometry tests cover mixed clean/polluted lakes in one mesh, unknown edge triangles, cleanup transitions and unchanged original indices. Material-name tests use the actual lake/spring names and reject vegetation, stone and building names. These tests do **not** execute Unity rendering. The visual lake/spring result remains subject to the manual checks in `MANUAL-TEST.md`.
+
+## Cloud VFX
+
+The colored cloud patches are Unity Visual Effect objects rather than ordinary mesh renderers. The shipped `VFX_Forest_Clouds` variants expose a `Color` vector on their Visual Effect graph. While F1 is enabled, the runtime stores each discovered cloud color and sets its RGB channels to luminance while preserving alpha; disabling the filter restores the stored colors. Only Visual Effect objects whose names contain `Cloud` are included, so fog, smoke, structures and terrain materials are unaffected.

@@ -4,6 +4,7 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
+using UnityEngine.VFX;
 
 namespace BioEden.NoDOF
 {
@@ -27,6 +28,7 @@ namespace BioEden.NoDOF
         private readonly Dictionary<Camera, int> cameraMasks = new Dictionary<Camera, int>();
         private readonly Dictionary<Renderer, Material[]> cleanWaterMaterials = new Dictionary<Renderer, Material[]>();
         private readonly List<Material> waterMaterialClones = new List<Material>();
+        private readonly Dictionary<VisualEffect, Vector4> cloudColors = new Dictionary<VisualEffect, Vector4>();
         private readonly List<Renderer> waterRenderers = new List<Renderer>();
         private readonly Dictionary<Renderer, LakeWaterMesh> lakeMeshes = new Dictionary<Renderer, LakeWaterMesh>();
         private readonly Dictionary<object, int> waterFeatureAtCoord = new Dictionary<object, int>();
@@ -46,6 +48,7 @@ namespace BioEden.NoDOF
         private float lastSaturation = -1f;
         private bool preserveFeatureInstalled;
         private bool waterScanDone;
+        private bool cloudScanDone;
         public static bool IsEnabled => filterEnabled;
 
         public static void Ensure()
@@ -255,6 +258,33 @@ namespace BioEden.NoDOF
             }
             foreach (var renderer in waterRenderers)
                 if (renderer != null) SetWaterRendererPreservation(renderer, WaterIsPolluted(renderer));
+            RefreshCloudColors(forceWaterScan);
+        }
+
+        private void RefreshCloudColors(bool forceScan)
+        {
+            if (forceScan || !cloudScanDone)
+            {
+                cloudColors.Clear();
+                foreach (var effect in UnityEngine.Object.FindObjectsByType<VisualEffect>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                {
+                    if (effect == null || !effect.gameObject.name.Contains("Cloud", StringComparison.OrdinalIgnoreCase)) continue;
+                    try
+                    {
+                        if (!effect.HasVector4("Color")) continue;
+                        cloudColors.Add(effect, effect.GetVector4("Color"));
+                    }
+                    catch (Exception e) { Debug.LogWarning("[BioEden.NoDOF] Cloud color read failed: " + e.Message); }
+                }
+                cloudScanDone = true;
+                Debug.Log("[BioEden.NoDOF] Cloud color controls: " + cloudColors.Count);
+            }
+            foreach (var pair in cloudColors)
+                if (pair.Key != null)
+                {
+                    float luma = CloudColorMath.Luma(pair.Value.x, pair.Value.y, pair.Value.z);
+                    pair.Key.SetVector4("Color", new Vector4(luma, luma, luma, pair.Value.w));
+                }
         }
 
         private void AddRenderersUnder(Type componentType)
@@ -318,6 +348,10 @@ namespace BioEden.NoDOF
             waterGrid = null;
             waterFeatures = null;
             player = null;
+            foreach (var pair in cloudColors)
+                if (pair.Key != null) pair.Key.SetVector4("Color", pair.Value);
+            cloudColors.Clear();
+            cloudScanDone = false;
             foreach (var pair in cleanWaterMaterials)
             {
                 if (pair.Key != null) pair.Key.sharedMaterials = pair.Value;

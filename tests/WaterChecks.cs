@@ -10,6 +10,8 @@ static class WaterChecks
         Require(WaterMaterialNames.IsLake("Mat_Terrain_Water_Lake (Instance)"), "Generated lake material");
         foreach (string name in new[] { "Mat_Forest_water_clean", "mat_forest_water_source_clean", "mat_water_sytem_clean", "Mat_water_river_cleaner_clean", "Mat_sanctuary_water" })
             Require(!WaterMaterialNames.IsWater(name), "Do not change vegetation, stones, or buildings: " + name);
+        float luma = CloudColorMath.Luma(1f, 0f, 0f);
+        Require(Math.Abs(luma - 0.299f) < 0.0001f, "Cloud grayscale uses luminance");
         // Two different lakes share one renderer. Unknown border triangles stay
         // colored; clean and polluted triangles must never overlap or disappear.
         int[] indices = { 2, 0, 1, 3, 5, 4, 8, 6, 7, 9, 11, 10 };
