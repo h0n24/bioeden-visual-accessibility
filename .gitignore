@@ -1,5 +1,7 @@
 build/
 **/obj/
+tests/bin/
+tests/obj/
 *.NoDOF.original
 *.user
 *.suo
