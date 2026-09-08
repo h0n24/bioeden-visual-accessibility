@@ -2,14 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 
 namespace BioEden.NoDOF
 {
     // Uses the game's fullscreen saturation material, then selectively redraws
-    // only player structures, mineral objects, and polluted water above it.
-    // Natural terrain and clean water therefore remain desaturated without a
-    // second full-scene render.
+    // player structures, mineral objects, and polluted water above it. Clean
+    // water is also given a temporary grayscale material because the game's
+    // water shader can render after the fullscreen adjustment pass.
     public sealed class FilterController : MonoBehaviour
     {
         public const int PreserveLayer = 31;
@@ -20,6 +21,7 @@ namespace BioEden.NoDOF
         private static readonly List<Material> materials = new List<Material>();
         private readonly Dictionary<GameObject, int> preservedLayers = new Dictionary<GameObject, int>();
         private readonly Dictionary<Camera, int> cameraMasks = new Dictionary<Camera, int>();
+        private readonly Dictionary<Renderer, Material> cleanWaterMaterials = new Dictionary<Renderer, Material>();
         private Button button;
         private Image icon;
         private Text label;
@@ -244,6 +246,7 @@ namespace BioEden.NoDOF
             if (renderer == null) return;
             if (preserve)
             {
+                RestoreCleanWaterMaterial(renderer);
                 AddPreservedRenderer(renderer);
                 return;
             }
@@ -257,10 +260,21 @@ namespace BioEden.NoDOF
                 go.layer = originalLayer;
                 preservedLayers.Remove(go);
             }
+            ApplyCleanWaterMaterial(renderer);
         }
 
         private void RestorePreservedLayers()
         {
+            foreach (var pair in cleanWaterMaterials)
+            {
+                if (pair.Key != null)
+                {
+                    var clone = pair.Key.sharedMaterial;
+                    pair.Key.sharedMaterial = pair.Value;
+                    if (clone != null && clone != pair.Value) Destroy(clone);
+                }
+            }
+            cleanWaterMaterials.Clear();
             foreach (var pair in preservedLayers)
                 if (pair.Key != null) pair.Key.layer = pair.Value;
             preservedLayers.Clear();
@@ -268,6 +282,37 @@ namespace BioEden.NoDOF
                 if (pair.Key != null) pair.Key.cullingMask = pair.Value;
             cameraMasks.Clear();
             waterScanDone = false;
+        }
+
+        private void ApplyCleanWaterMaterial(Renderer renderer)
+        {
+            if (cleanWaterMaterials.ContainsKey(renderer) || renderer.sharedMaterial == null) return;
+            var original = renderer.sharedMaterial;
+            var clone = new Material(original) { name = original.name + " (BioEden grayscale water)" };
+            var shader = clone.shader;
+            if (shader != null)
+            {
+                for (int i = 0; i < shader.GetPropertyCount(); i++)
+                {
+                    if (shader.GetPropertyType(i) != ShaderPropertyType.Color) continue;
+                    string property = shader.GetPropertyName(i);
+                    Color color = clone.GetColor(property);
+                    float gray = color.r * 0.2126f + color.g * 0.7152f + color.b * 0.0722f;
+                    clone.SetColor(property, new Color(gray, gray, gray, color.a));
+                }
+                if (clone.HasProperty("_Saturation")) clone.SetFloat("_Saturation", 0f);
+            }
+            cleanWaterMaterials.Add(renderer, original);
+            renderer.sharedMaterial = clone;
+        }
+
+        private void RestoreCleanWaterMaterial(Renderer renderer)
+        {
+            if (renderer == null || !cleanWaterMaterials.TryGetValue(renderer, out Material original)) return;
+            var clone = renderer.sharedMaterial;
+            renderer.sharedMaterial = original;
+            cleanWaterMaterials.Remove(renderer);
+            if (clone != null && clone != original) Destroy(clone);
         }
 
         private bool WaterIsPolluted(Renderer renderer)
