@@ -25,7 +25,7 @@ namespace BioEden.NoDOF
         private Text label;
         private GameObject iconRoot;
         private PreserveColorFeature preserveFeature;
-        private Type playerType, gameHubType;
+        private Type playerType;
         private object player;
         private MethodInfo playerPos2Coord;
         private PropertyInfo worldGridIndexer;
@@ -274,14 +274,13 @@ namespace BioEden.NoDOF
             {
                 playerType = Type.GetType("Biomes.Player, Assembly-CSharp");
                 var gameType = Type.GetType("Biomes.Game, Assembly-CSharp");
-                gameHubType = Type.GetType("Bag.Heritage.GameSystem.GameHub`2, Bag.Heritage.GameSystem")?.MakeGenericType(gameType, playerType);
-                object hub = FindProperty(gameHubType, "Singleton")?.GetValue(null);
-                player = FindProperty(gameHubType, "Plyr")?.GetValue(hub);
+                object game = FindProperty(gameType, "Singleton")?.GetValue(null);
+                player = FindProperty(gameType, "Plyr")?.GetValue(game);
                 playerPos2Coord = playerType?.GetMethod("Pos2Coord", BindingFlags.Instance | BindingFlags.Public);
             }
             if (player == null || playerPos2Coord == null) return false;
             object coord = playerPos2Coord.Invoke(player, new object[] { position });
-            object grid = playerType.GetProperty("WorldGrid", BindingFlags.Instance | BindingFlags.Public)?.GetValue(player);
+            object grid = FindProperty(playerType, "WorldGrid")?.GetValue(player);
             if (grid == null) return false;
             if (worldGridIndexer == null) worldGridIndexer = FindIndexer(grid.GetType(), coord.GetType());
             object slot = worldGridIndexer?.GetValue(grid, new[] { coord });
