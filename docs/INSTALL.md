@@ -4,7 +4,7 @@ The release ZIP is the easiest option for regular players. It does not require G
 
 1. Close BioEden.
 2. Download the ZIP from the repository's **Releases** page and extract it.
-3. Run `install.ps1` with PowerShell, or double-click `Nainstalovat.cmd` after placing the extracted folder next to the `BioEden` folder.
+3. Run `install.ps1` with PowerShell, or double-click `Install.cmd` after placing the extracted folder next to the `BioEden` folder.
 4. Start the game normally.
 
 If the game is not detected automatically, pass its folder explicitly:
