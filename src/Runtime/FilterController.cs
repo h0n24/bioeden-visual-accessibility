@@ -239,26 +239,42 @@ namespace BioEden.NoDOF
         {
             try
             {
-                if (player == null)
+                Bounds bounds = renderer.bounds;
+                Vector3 x = Vector3.right * bounds.extents.x * 0.65f;
+                Vector3 z = Vector3.forward * bounds.extents.z * 0.65f;
+                foreach (Vector3 sample in new[] { bounds.center, bounds.center + x, bounds.center - x, bounds.center + z, bounds.center - z })
                 {
-                    playerType = Type.GetType("Biomes.Player, Assembly-CSharp");
-                    var gameType = Type.GetType("Biomes.Game, Assembly-CSharp");
-                    gameHubType = Type.GetType("Bag.Heritage.GameSystem.GameHub`2, Bag.Heritage.GameSystem")?.MakeGenericType(gameType, playerType);
-                    object hub = gameHubType?.GetProperty("Singleton", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(null);
-                    player = gameHubType?.GetProperty("Plyr", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(hub);
-                    playerPos2Coord = playerType?.GetMethod("Pos2Coord", BindingFlags.Instance | BindingFlags.Public);
+                    if (!TryGetPollution(sample, out float pollution)) return true;
+                    if (pollution > 0.0001f) return true;
                 }
-                if (player == null || playerPos2Coord == null) return true;
-                object coord = playerPos2Coord.Invoke(player, new object[] { renderer.bounds.center });
-                object grid = playerType.GetProperty("WorldGrid", BindingFlags.Instance | BindingFlags.Public)?.GetValue(player);
-                if (grid == null) return true;
-                if (worldGridIndexer == null) worldGridIndexer = FindIndexer(grid.GetType(), coord.GetType());
-                object slot = worldGridIndexer?.GetValue(grid, new[] { coord });
-                if (slot == null) return true;
-                var pollution = slot.GetType().GetField("pollution", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(slot);
-                return pollution == null || ((Vector2)pollution).x > 0.0001f;
+                return false;
             }
             catch { return true; }
+        }
+
+        private bool TryGetPollution(Vector3 position, out float value)
+        {
+            value = 0f;
+            if (player == null)
+            {
+                playerType = Type.GetType("Biomes.Player, Assembly-CSharp");
+                var gameType = Type.GetType("Biomes.Game, Assembly-CSharp");
+                gameHubType = Type.GetType("Bag.Heritage.GameSystem.GameHub`2, Bag.Heritage.GameSystem")?.MakeGenericType(gameType, playerType);
+                object hub = gameHubType?.GetProperty("Singleton", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(null);
+                player = gameHubType?.GetProperty("Plyr", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(hub);
+                playerPos2Coord = playerType?.GetMethod("Pos2Coord", BindingFlags.Instance | BindingFlags.Public);
+            }
+            if (player == null || playerPos2Coord == null) return false;
+            object coord = playerPos2Coord.Invoke(player, new object[] { position });
+            object grid = playerType.GetProperty("WorldGrid", BindingFlags.Instance | BindingFlags.Public)?.GetValue(player);
+            if (grid == null) return false;
+            if (worldGridIndexer == null) worldGridIndexer = FindIndexer(grid.GetType(), coord.GetType());
+            object slot = worldGridIndexer?.GetValue(grid, new[] { coord });
+            if (slot == null) return false;
+            var pollution = slot.GetType().GetField("pollution", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(slot);
+            if (pollution == null) return false;
+            value = ((Vector2)pollution).x;
+            return true;
         }
 
         private bool IsInGameWorld()
@@ -279,9 +295,10 @@ namespace BioEden.NoDOF
                 object currentPlayer = gameType.GetProperty("Plyr", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(game);
                 object worldGrid = currentPlayer?.GetType().GetProperty("WorldGrid", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(currentPlayer);
                 object state = gameType.GetProperty("StateCurrent", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(game);
+                bool loadingEnded = (bool?)gameType.GetField("loadingEnded", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(game) ?? false;
                 string stateName = state?.ToString();
                 bool playableState = stateName == "Play" || stateName == "PlayPost" || stateName == "Pause";
-                return !loading && playableState && currentPlayer != null && worldGrid != null;
+                return !loading && loadingEnded && playableState && currentPlayer != null && worldGrid != null;
             }
             catch { return false; }
         }

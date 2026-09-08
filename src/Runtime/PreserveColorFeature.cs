@@ -34,7 +34,10 @@ namespace BioEden.NoDOF
             public PreserveColorPass()
             {
                 renderPassEvent = RenderPassEvent.AfterRenderingPostProcessing;
-                filtering = new FilteringSettings(RenderQueueRange.opaque, 1 << FilterController.PreserveLayer);
+                // Selected structures and water can use transparent or cutout materials.
+                // The layer mask is exclusive, so including all queues cannot affect the
+                // rest of the scene and keeps those objects visible in the color pass.
+                filtering = new FilteringSettings(RenderQueueRange.all, 1 << FilterController.PreserveLayer);
             }
 
             public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)

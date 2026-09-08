@@ -25,5 +25,6 @@ foreach ($n in @('NoDofPatcher.exe','NoDofPatcher.exe.config','Mono.Cecil.dll'))
 foreach ($f in $m.files) { $f.patched = Sha (Join-Path $PSScriptRoot ('build\patched\' + $f.name)) }
 $m.runtime = Sha (Join-Path $PSScriptRoot 'bin\BioEden.NoDOF.dll')
 foreach ($p in $m.payload) { $p.sha256 = Sha (Join-Path $PSScriptRoot $p.path) }
-$m | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $manifestPath -Encoding UTF8
+$json = $m | ConvertTo-Json -Depth 8
+[IO.File]::WriteAllText($manifestPath, $json, [Text.UTF8Encoding]::new($false))
 Write-Host 'Build complete. No live game files changed. Re-run validation before installation.'
