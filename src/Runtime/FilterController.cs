@@ -198,7 +198,7 @@ namespace BioEden.NoDOF
                 foreach (var renderer in UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None))
                 {
                     if (!renderer.enabled || renderer.gameObject.layer != LayerMask.NameToLayer("Water")) continue;
-                    if (WaterIsPolluted(renderer)) AddPreservedRenderer(renderer);
+                    SetWaterRendererPreservation(renderer, WaterIsPolluted(renderer));
                 }
                 waterScanDone = true;
             }
@@ -218,7 +218,7 @@ namespace BioEden.NoDOF
             foreach (var obj in UnityEngine.Object.FindObjectsByType(componentType, FindObjectsSortMode.None))
                 if (obj is Component component)
                     foreach (var renderer in component.GetComponentsInChildren<Renderer>(true))
-                        if (WaterIsPolluted(renderer)) AddPreservedRenderer(renderer);
+                        SetWaterRendererPreservation(renderer, WaterIsPolluted(renderer));
         }
 
         private void EnsurePreserveCameras()
@@ -237,6 +237,26 @@ namespace BioEden.NoDOF
             var go = renderer.gameObject;
             if (!preservedLayers.ContainsKey(go)) preservedLayers.Add(go, go.layer);
             go.layer = PreserveLayer;
+        }
+
+        private void SetWaterRendererPreservation(Renderer renderer, bool preserve)
+        {
+            if (renderer == null) return;
+            if (preserve)
+            {
+                AddPreservedRenderer(renderer);
+                return;
+            }
+
+            // A renderer can have been classified while pollution was non-zero
+            // and become clean later. Remove that stale override on every water
+            // refresh so a clean lake/river cannot stay in the color pass.
+            var go = renderer.gameObject;
+            if (preservedLayers.TryGetValue(go, out int originalLayer))
+            {
+                go.layer = originalLayer;
+                preservedLayers.Remove(go);
+            }
         }
 
         private void RestorePreservedLayers()
