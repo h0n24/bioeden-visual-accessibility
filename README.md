@@ -1,4 +1,4 @@
-# BioEden – Visual Accessibility 1.3.0 beta 7
+# BioEden – Visual Accessibility 1.3.0 beta 8
 
 A Windows accessibility mod for BioEden 1.2.0.0 (Unity 6000.0.56f2).
 
@@ -14,6 +14,7 @@ All options use the game's existing settings UI, including arrow navigation, **C
 | Accessibility | Antenna Range Outline | Original range border | White outer border with a blue center on the antenna preview and covered-area border | On |
 | Accessibility | Extended Zoom | Original camera limit and pitch | About 35% more zoom with a smooth transition toward a more top-down view | On |
 | Accessibility | Map Desaturation Filter | Full-color world | Desaturated world while normal building and interaction remain available | Off |
+| Accessibility | Simplify Clean Lakes | Keep subtle waves on clean lakes | Use a uniform light-gray palette on clean lakes while the filter is active | Off |
 | Accessibility | Map Filter Hotkey | F1 | F1, F2 or F3 | F1 |
 
 Press **Confirm** after changing a value. A restart is not required. Saved values remain persistent. **Default** restores the game's default values, including these settings. The filter can be toggled with its selected key or with the planet icon immediately before the Help icon in the top-right corner.
@@ -21,6 +22,8 @@ Press **Confirm** after changing a value. A restart is not required. Saved value
 The antenna outline does not change range or building rules. It uses the same geometry as the game's original border and follows its movement and visibility. Version 1.2.1 projects the border into a screen-space layer above the fog effect: the white line is 5.5 pixels wide and the blue center is 2 pixels wide. The line is intentionally visible over obstacles and unexplored blue areas. It does not capture input and stays below normal menu overlays. Turning the setting off removes the added outline.
 
 The map filter uses the game's existing fullscreen image adjustment with saturation set to zero. It does not open the game's planet-information mode, so building, selecting objects and following normal game markers remain available. The UI stays colored. The filter icon is created only after entering the game world, sits before Help and displays the active key. The filter is disabled after a fresh installation. When enabled, only player structures, mineral objects and polluted water are redrawn in color; grass, trees, rocks, clean water stay desaturated. Ambient cloud and ground-fog VFX are hidden until the filter is switched off. The selective redraw avoids the full-scene performance cost of earlier builds. Extended Zoom suppresses Depth of Field while active and restores the user's Video setting when disabled.
+
+Clean lakes use a lighter neutral-gray palette in the filter. **Simplify Clean Lakes** additionally matches wave, caustic and shoreline colors to the lake surface. This option affects only lakes displayed as 0% poisonous; polluted lakes retain their original materials. Both styles need in-game visual verification.
 
 ## Screenshots
 

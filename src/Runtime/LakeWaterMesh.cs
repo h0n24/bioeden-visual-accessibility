@@ -96,6 +96,11 @@ namespace BioEden.NoDOF
             Debug.Log("[BioEden.NoDOF] Lake water triangles: clean=" + cleanCount + ", colored=" + coloredCount);
         }
 
+        public void UpdateCleanMaterials(Action<Material> update)
+        {
+            foreach (var clone in clones) update(clone);
+        }
+
         public void Dispose()
         {
             if (filter != null && filter.sharedMesh == split) filter.sharedMesh = original;

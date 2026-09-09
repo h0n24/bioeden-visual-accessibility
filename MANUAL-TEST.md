@@ -50,3 +50,11 @@ Compare the same save, camera position and zoom with F1 off/on, then Antenna Ran
 ## Sanctuary and relic depletion
 
 With F1 enabled, compare a sanctuary with remaining research points against one with zero points. Only the former should retain its colors. Currency-free relics should lose color after exploration finishes. Verify depletion while F1 stays enabled (refresh within two seconds), then toggle F1 off to restore normal rendering.
+
+## Clean lake palette (1.3.0 beta 8)
+
+- Enable the filter near both a 0% lake and a polluted lake. The clean lake should be lighter and neutral gray; the polluted lake should retain its original color.
+- Toggle Accessibility > Simplify Clean Lakes and Confirm: On should suppress contrasting stripes and caustics; Off should restore subtle gray waves without leaving the filter.
+- Switch the filter off: both lakes must return to their original appearance.
+- Clean a polluted lake while the filter is active and check that its style changes when the inspection panel reaches 0%.
+- Reload and verify the setting persists; inspect the additional row for clipping at your screen resolution.

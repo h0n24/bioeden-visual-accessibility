@@ -23,6 +23,16 @@ namespace BioEden.NoDOF
         private static bool filterEnabled;
         private static bool startupGateComplete;
         private static int hotkey;
+        private static bool simplifyCleanLakes;
+
+        public static void SetSimplifyCleanLakes(bool value)
+        {
+            if (simplifyCleanLakes == value) return;
+            simplifyCleanLakes = value;
+            if (instance != null)
+                foreach (var lake in instance.lakeMeshes.Values)
+                    lake.UpdateCleanMaterials(ApplyCleanLakePalette);
+        }
         private static readonly List<Material> materials = new List<Material>();
         private readonly Dictionary<GameObject, int> preservedLayers = new Dictionary<GameObject, int>();
         private readonly Dictionary<Camera, int> cameraMasks = new Dictionary<Camera, int>();
@@ -247,7 +257,7 @@ namespace BioEden.NoDOF
                     {
                         if (!lakeMeshes.ContainsKey(renderer))
                         {
-                            try { lakeMeshes.Add(renderer, new LakeWaterMesh(renderer, ResolveWaterFeature, CreateGrayscaleWaterMaterial)); }
+                            try { lakeMeshes.Add(renderer, new LakeWaterMesh(renderer, ResolveWaterFeature, CreateCleanLakeMaterial)); }
                             catch (Exception e) { Debug.LogError("[BioEden.NoDOF] Lake mesh: " + e.Message); }
                         }
                         lakeCount++;
@@ -460,6 +470,35 @@ namespace BioEden.NoDOF
                 if (clone.HasProperty("_Saturation")) clone.SetFloat("_Saturation", 0f);
             }
             return clone;
+        }
+
+        private static Material CreateCleanLakeMaterial(Material original)
+        {
+            var clone = CreateGrayscaleWaterMaterial(original);
+            ApplyCleanLakePalette(clone);
+            return clone;
+        }
+
+        private static void ApplyCleanLakePalette(Material material)
+        {
+            // Both shader palettes must match: the lake shader blends between
+            // them using water data even in the clean-only triangle slot.
+            // Neutral RGB values also replace the original olive floor palette.
+            foreach (string suffix in new[] { "", "_clean" })
+            {
+                SetLakeGray(material, "_ColorFloor" + suffix, 0.65f);
+                SetLakeGray(material, "_ColorSides" + suffix, 0.65f);
+                SetLakeGray(material, "_ColorBorders" + suffix, simplifyCleanLakes ? 0.65f : 0.72f);
+                SetLakeGray(material, "_ColorCaustics" + suffix, simplifyCleanLakes ? 0.65f : 0.68f);
+                SetLakeGray(material, "_ColorWaves0" + suffix, simplifyCleanLakes ? 0.65f : 0.78f);
+                SetLakeGray(material, "_ColorWaves1" + suffix, simplifyCleanLakes ? 0.65f : 0.78f);
+            }
+        }
+
+        private static void SetLakeGray(Material material, string property, float gray)
+        {
+            if (material.HasProperty(property))
+                material.SetColor(property, new Color(gray, gray, gray, material.GetColor(property).a));
         }
 
         private void RestoreCleanWaterMaterial(Renderer renderer)

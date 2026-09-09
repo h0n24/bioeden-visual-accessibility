@@ -81,6 +81,16 @@ namespace BioEden.NoDOF
         protected override void ApplyValue(bool value) => Runtime.SetFilter(value);
     }
 
+    public sealed class SimplifyCleanLakesSetting : ToggleSetting
+    {
+        public const string SettingKey = "BioEden.NoDOF.SimplifyCleanLakes";
+        public SimplifyCleanLakesSetting(object manager) : base(manager) { }
+        public override string Key => SettingKey;
+        public override string Label => "Simplify Clean Lakes";
+        public override int DefaultIndex => 0;
+        protected override void ApplyValue(bool value) => FilterController.SetSimplifyCleanLakes(value);
+    }
+
     public sealed class MapFilterHotkeySetting : ToggleSetting
     {
         public const string SettingKey = "BioEden.NoDOF.MapFilterHotkey";
@@ -126,6 +136,7 @@ namespace BioEden.NoDOF
                     if (!entries.Exists(s => s?.Key == ExtendedZoomSetting.SettingKey)) entries.Add(new ExtendedZoomSetting(manager));
                     if (!entries.Exists(s => s?.Key == MapFilterSetting.SettingKey)) entries.Add(new MapFilterSetting(manager));
                     if (!entries.Exists(s => s?.Key == MapFilterHotkeySetting.SettingKey)) entries.Add(new MapFilterHotkeySetting(manager));
+                    if (!entries.Exists(s => s?.Key == SimplifyCleanLakesSetting.SettingKey)) entries.Add(new SimplifyCleanLakesSetting(manager));
                 }
                 settings[key] = entries.ToArray();
             }
