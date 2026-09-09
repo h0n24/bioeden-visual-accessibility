@@ -1,4 +1,4 @@
-# BioEden – Visual Accessibility 1.3.0 beta 5
+# BioEden – Visual Accessibility 1.3.0 beta 6
 
 A Windows accessibility mod for BioEden 1.2.0.0 (Unity 6000.0.56f2).
 

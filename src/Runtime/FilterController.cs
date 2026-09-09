@@ -218,10 +218,10 @@ namespace BioEden.NoDOF
                 "Biomes.Furnitures.FurnitureIngame",
                 "Biomes.Domes.DomeIngame",
                 "Biomes.Domes.DomeSpaceIngame",
-                "Biomes.TechSanctuaries.TechSanctuaryInGame",
                 "MineralHandler"
             }) AddRenderersUnder(Type.GetType(typeName + ", Assembly-CSharp"));
 
+            RefreshSanctuaries();
             RefreshWaterContext();
             waterPollution.Clear();
             if (forceWaterScan || !waterScanDone)
@@ -304,6 +304,34 @@ namespace BioEden.NoDOF
             }
             cloudScanDone = true;
             Debug.Log("[BioEden.NoDOF] Hidden ambient cloud/fog effects: " + hiddenAtmosphere.Count);
+        }
+
+        private void RefreshSanctuaries()
+        {
+            var type = Type.GetType("Biomes.TechSanctuaries.TechSanctuaryInGame, Assembly-CSharp");
+            if (type == null) return;
+            foreach (var obj in UnityEngine.Object.FindObjectsByType(type, FindObjectsSortMode.None))
+            {
+                if (!(obj is Component component)) continue;
+                object service = FindProperty(type, "Service")?.GetValue(component);
+                if (service == null) continue;
+                object block = FindProperty(service.GetType(), "BlockData")?.GetValue(service);
+                var currency = FindProperty(block?.GetType(), "Currency")?.GetValue(block) as UnityEngine.Object;
+                // ResearchPoints is the remaining balance used by the inspection
+                // panel. Relics without currency use the exploration completion.
+                object remaining = FindProperty(service.GetType(), "ResearchPoints")?.GetValue(service);
+                object explored = FindProperty(service.GetType(), "IsExplored")?.GetValue(service);
+                bool depleted = currency != null ? remaining is int points && points <= 0 : explored is bool done && done;
+                foreach (var renderer in component.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (!depleted) AddPreservedRenderer(renderer);
+                    else if (preservedLayers.TryGetValue(renderer.gameObject, out int layer))
+                    {
+                        renderer.gameObject.layer = layer;
+                        preservedLayers.Remove(renderer.gameObject);
+                    }
+                }
+            }
         }
 
         private void AddRenderersUnder(Type componentType)

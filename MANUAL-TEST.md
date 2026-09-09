@@ -46,3 +46,7 @@ If anything differs, record the active settings and send a screenshot. The most 
 ## Performance comparison
 
 Compare the same save, camera position and zoom with F1 off/on, then Antenna Range Outline off/on during placement. Record FPS and whether the issue is horizontal screen tearing or intermittent stutters. Also compare Extended Zoom off at the normal camera distance. Keep resolution, V Sync and framerate limit identical. No FPS improvement has been measured for beta 4; its scene-search reduction is verified from code only.
+
+## Sanctuary and relic depletion
+
+With F1 enabled, compare a sanctuary with remaining research points against one with zero points. Only the former should retain its colors. Currency-free relics should lose color after exploration finishes. Verify depletion while F1 stays enabled (refresh within two seconds), then toggle F1 off to restore normal rendering.
