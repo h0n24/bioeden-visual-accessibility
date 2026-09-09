@@ -36,7 +36,7 @@ $runtimeExists = Test-Path -LiteralPath $runtime
 $runtimeCurrent = if ($runtimeExists) { Hash $runtime } else { '' }
 if ($runtimeExists -and $runtimeCurrent -notin (@($m.runtime) + @($m.previousRuntime))) { throw 'The existing mod runtime has an unknown version. No game files changed.' }
 if ($Action -eq 'Status') {
-    if ($allPatched -and $runtimeCurrent -eq $m.runtime) { Write-Host "BioEden visual accessibility $($m.version) is INSTALLED. Settings: Video > Depth of Field; Accessibility > Antenna Range Outline / Extended Zoom / Map Desaturation Filter / Map Filter Hotkey." }
+    if ($allPatched -and $runtimeCurrent -eq $m.runtime) { Write-Host "BioEden visual accessibility $($m.version) is INSTALLED. Settings: Video > Depth of Field; Accessibility > Antenna Range Outline / Extended Zoom / Map Desaturation Filter / Simplify Clean Lakes / Map Filter Hotkey." }
     elseif ($allOriginal -and !$runtimeExists) { Write-Host 'NoDOF menu toggle is NOT installed. Game libraries are original.' }
     else { Write-Host 'Legacy or partial NoDOF installation detected. Install upgrades it; Uninstall restores the game.' }
     return
