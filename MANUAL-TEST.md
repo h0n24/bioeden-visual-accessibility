@@ -58,3 +58,11 @@ With F1 enabled, compare a sanctuary with remaining research points against one 
 - Switch the filter off: both lakes must return to their original appearance.
 - Clean a polluted lake while the filter is active and check that its style changes when the inspection panel reaches 0%.
 - Reload and verify the setting persists; inspect the additional row for clipping at your screen resolution.
+
+## Neutral water rendering (1.3.0 beta 9)
+
+- Sample a clean lake and river away from edges/UI: RGB channels should match.
+- Verify river/lake junctions and source water use matching gray; inspect shorelines for exposed mesh edges.
+- Simplify Clean Lakes: On gives flat gray, Off gives a subtle static gray pattern.
+- Polluted water must keep the original appearance. Turning F1 off must restore all water materials.
+- Compare FPS with beta 8 at the same camera position. This version adds cached clean-water draw calls, with no per-frame scene scan.

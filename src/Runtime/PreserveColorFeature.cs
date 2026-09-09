@@ -44,6 +44,13 @@ namespace BioEden.NoDOF
             {
                 var drawing = CreateDrawingSettings(shaderTags, ref renderingData, SortingCriteria.CommonOpaque);
                 context.DrawRenderers(renderingData.cullResults, ref drawing, ref filtering);
+                var commands = CommandBufferPool.Get("BioEden neutral clean water");
+                try
+                {
+                    FilterController.DrawCleanWater(commands);
+                    context.ExecuteCommandBuffer(commands);
+                }
+                finally { CommandBufferPool.Release(commands); }
             }
         }
     }

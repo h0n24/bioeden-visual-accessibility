@@ -37,6 +37,7 @@ namespace BioEden.NoDOF
         private readonly Dictionary<GameObject, int> preservedLayers = new Dictionary<GameObject, int>();
         private readonly Dictionary<Camera, int> cameraMasks = new Dictionary<Camera, int>();
         private readonly Dictionary<Renderer, Material[]> cleanWaterMaterials = new Dictionary<Renderer, Material[]>();
+        private readonly Dictionary<Renderer, Material[]> cleanWaterDraws = new Dictionary<Renderer, Material[]>();
         private readonly List<Material> waterMaterialClones = new List<Material>();
         private sealed class HiddenAtmosphere
         {
@@ -427,6 +428,7 @@ namespace BioEden.NoDOF
                 if (pair.Key != null) pair.Key.sharedMaterials = pair.Value;
             }
             cleanWaterMaterials.Clear();
+            cleanWaterDraws.Clear();
             foreach (var clone in waterMaterialClones) if (clone != null) Destroy(clone);
             waterMaterialClones.Clear();
             foreach (var pair in preservedLayers)
@@ -446,8 +448,15 @@ namespace BioEden.NoDOF
             for (int i = 0; i < assigned.Length; i++)
             {
                 if (assigned[i] == null || (!allMaterials && !WaterMaterialNames.IsWater(assigned[i].name))) continue;
-                assigned[i] = CreateGrayscaleWaterMaterial(assigned[i]);
+                assigned[i] = allMaterials ? CreateGrayscaleWaterMaterial(assigned[i]) : CreateNeutralWaterMaterial(assigned[i]);
                 waterMaterialClones.Add(assigned[i]);
+            }
+            if (!allMaterials)
+            {
+                var draws = new Material[assigned.Length];
+                for (int i = 0; i < assigned.Length; i++)
+                    if (assigned[i] != originals[i]) draws[i] = assigned[i];
+                cleanWaterDraws[renderer] = draws;
             }
             cleanWaterMaterials.Add(renderer, originals);
             renderer.sharedMaterials = assigned;
@@ -472,33 +481,67 @@ namespace BioEden.NoDOF
             return clone;
         }
 
+        private static Texture2D cleanLakePattern;
+
+        private static Material CreateNeutralWaterMaterial(Material original)
+        {
+            // This shader is shipped in sharedassets3.assets. A fresh material
+            // has no fog keywords, lighting, reflections or water palette blend.
+            var shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null || !shader.isSupported)
+                throw new InvalidOperationException("Neutral water shader is unavailable.");
+            var material = new Material(shader) { name = original.name + " (BioEden neutral water)" };
+            material.SetColor("_BaseColor", new Color(0.65f, 0.65f, 0.65f, 1f));
+            material.SetFloat("_Cull", 0f);
+            material.SetFloat("_ZWrite", 1f);
+            material.SetFloat("_SrcBlend", 1f);
+            material.SetFloat("_DstBlend", 0f);
+            return material;
+        }
+
         private static Material CreateCleanLakeMaterial(Material original)
         {
-            var clone = CreateGrayscaleWaterMaterial(original);
+            var clone = CreateNeutralWaterMaterial(original);
             ApplyCleanLakePalette(clone);
             return clone;
         }
 
         private static void ApplyCleanLakePalette(Material material)
         {
-            // Both shader palettes must match: the lake shader blends between
-            // them using water data even in the clean-only triangle slot.
-            // Neutral RGB values also replace the original olive floor palette.
-            foreach (string suffix in new[] { "", "_clean" })
+            if (cleanLakePattern == null)
             {
-                SetLakeGray(material, "_ColorFloor" + suffix, 0.65f);
-                SetLakeGray(material, "_ColorSides" + suffix, 0.65f);
-                SetLakeGray(material, "_ColorBorders" + suffix, simplifyCleanLakes ? 0.65f : 0.72f);
-                SetLakeGray(material, "_ColorCaustics" + suffix, simplifyCleanLakes ? 0.65f : 0.68f);
-                SetLakeGray(material, "_ColorWaves0" + suffix, simplifyCleanLakes ? 0.65f : 0.78f);
-                SetLakeGray(material, "_ColorWaves1" + suffix, simplifyCleanLakes ? 0.65f : 0.78f);
+                const int size = 64;
+                cleanLakePattern = new Texture2D(size, size, TextureFormat.RGBA32, false, true);
+                cleanLakePattern.name = "BioEden neutral lake pattern";
+                cleanLakePattern.wrapMode = TextureWrapMode.Repeat;
+                var pixels = new Color[size * size];
+                for (int y = 0; y < size; y++)
+                    for (int x = 0; x < size; x++)
+                    {
+                        float phase = x / (float)size + 0.08f * Mathf.Sin(y * 2f * Mathf.PI / size);
+                        float band = Mathf.Pow(0.5f + 0.5f * Mathf.Cos(phase * 2f * Mathf.PI), 16f);
+                        float gray = 0.95f + 0.05f * band;
+                        pixels[y * size + x] = new Color(gray, gray, gray, 1f);
+                    }
+                cleanLakePattern.SetPixels(pixels);
+                cleanLakePattern.Apply(false, true);
             }
+            material.SetTexture("_BaseMap", simplifyCleanLakes ? Texture2D.whiteTexture : cleanLakePattern);
+            material.SetTextureScale("_BaseMap", new Vector2(8f, 8f));
         }
 
-        private static void SetLakeGray(Material material, string property, float gray)
+        internal static void DrawCleanWater(CommandBuffer commands)
         {
-            if (material.HasProperty(property))
-                material.SetColor(property, new Color(gray, gray, gray, material.GetColor(property).a));
+            if (instance == null) return;
+            // Only water slots: source-prefab rocks keep their normal rendering.
+            // Cached material arrays avoid allocations and scene searches here.
+            foreach (var entry in instance.cleanWaterDraws)
+            {
+                var renderer = entry.Key;
+                if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy) continue;
+                for (int i = 0; i < entry.Value.Length; i++)
+                    if (entry.Value[i] != null) commands.DrawRenderer(renderer, entry.Value[i], i, 0);
+            }
         }
 
         private void RestoreCleanWaterMaterial(Renderer renderer)
@@ -507,6 +550,7 @@ namespace BioEden.NoDOF
             var assigned = renderer.sharedMaterials;
             renderer.sharedMaterials = originals;
             cleanWaterMaterials.Remove(renderer);
+            cleanWaterDraws.Remove(renderer);
             foreach (var clone in assigned)
                 if (clone != null && waterMaterialClones.Remove(clone)) Destroy(clone);
         }

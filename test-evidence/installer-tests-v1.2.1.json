@@ -1,6 +1,6 @@
 {
   "result": "PASS",
-  "version": "1.3.0-beta.8",
+  "version": "1.3.0-beta.9",
   "initialHashes": {
     "Assembly-CSharp.dll": "A55A3F3CBD5046385B73E9D82840E6F767FD9D4137DA58A5C7FFAD2E5BB364C1",
     "Unity.RenderPipelines.Universal.Runtime.dll": "263D418DBCE7DC050C422C0289873A7C6DF2E425EF11829C8A15CB4C037684A2",
@@ -17,6 +17,6 @@
     "Unknown runtime is preserved and rejected.",
     "Direct upgrade from v1.0 fixed-Off patch and subsequent full uninstall succeed."
   ],
-  "fixture": "D:\\Games\\BioEden-NoDOF-Menu\\build\\v121-test-vtfhf_ci",
+  "fixture": "D:\\Games\\BioEden-NoDOF-Menu\\build\\v121-test-0x5g3l6o",
   "inGameTests": "User will test manually."
 }

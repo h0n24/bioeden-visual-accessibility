@@ -1,4 +1,4 @@
-# BioEden – Visual Accessibility 1.3.0 beta 8
+# BioEden – Visual Accessibility 1.3.0 beta 9
 
 A Windows accessibility mod for BioEden 1.2.0.0 (Unity 6000.0.56f2).
 
@@ -23,7 +23,7 @@ The antenna outline does not change range or building rules. It uses the same ge
 
 The map filter uses the game's existing fullscreen image adjustment with saturation set to zero. It does not open the game's planet-information mode, so building, selecting objects and following normal game markers remain available. The UI stays colored. The filter icon is created only after entering the game world, sits before Help and displays the active key. The filter is disabled after a fresh installation. When enabled, only player structures, mineral objects and polluted water are redrawn in color; grass, trees, rocks, clean water stay desaturated. Ambient cloud and ground-fog VFX are hidden until the filter is switched off. The selective redraw avoids the full-scene performance cost of earlier builds. Extended Zoom suppresses Depth of Field while active and restores the user's Video setting when disabled.
 
-Clean lakes use a lighter neutral-gray palette in the filter. **Simplify Clean Lakes** additionally matches wave, caustic and shoreline colors to the lake surface. This option affects only lakes displayed as 0% poisonous; polluted lakes retain their original materials. Both styles need in-game visual verification.
+Clean water uses the game's shipped URP Unlit shader to avoid lighting tints. Lakes, rivers and source water share a neutral gray base. **Simplify Clean Lakes** selects a flat surface (On) or a subtle static grayscale pattern (Off), replacing the original animated lake waves only while the filter is active. Polluted water keeps its original material. Visual verification of shorelines and color neutrality is pending.
 
 ## Screenshots
 
