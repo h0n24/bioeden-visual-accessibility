@@ -324,11 +324,21 @@ namespace BioEden.NoDOF
                 bool depleted = currency != null ? remaining is int points && points <= 0 : explored is bool done && done;
                 foreach (var renderer in component.GetComponentsInChildren<Renderer>(true))
                 {
-                    if (!depleted) AddPreservedRenderer(renderer);
-                    else if (preservedLayers.TryGetValue(renderer.gameObject, out int layer))
+                    if (!depleted)
                     {
-                        renderer.gameObject.layer = layer;
-                        preservedLayers.Remove(renderer.gameObject);
+                        RestoreCleanWaterMaterial(renderer);
+                        AddPreservedRenderer(renderer);
+                    }
+                    else
+                    {
+                        if (preservedLayers.TryGetValue(renderer.gameObject, out int layer))
+                        {
+                            renderer.gameObject.layer = layer;
+                            preservedLayers.Remove(renderer.gameObject);
+                        }
+                        // Ruin glass renders in a later pass and retains its own
+                        // tint even after leaving the preserved-color layer.
+                        ApplyCleanWaterMaterial(renderer, true);
                     }
                 }
             }
@@ -418,14 +428,14 @@ namespace BioEden.NoDOF
             waterScanDone = false;
         }
 
-        private void ApplyCleanWaterMaterial(Renderer renderer)
+        private void ApplyCleanWaterMaterial(Renderer renderer, bool allMaterials = false)
         {
             if (cleanWaterMaterials.ContainsKey(renderer)) return;
             var originals = renderer.sharedMaterials;
             var assigned = (Material[])originals.Clone();
             for (int i = 0; i < assigned.Length; i++)
             {
-                if (assigned[i] == null || !WaterMaterialNames.IsWater(assigned[i].name)) continue;
+                if (assigned[i] == null || (!allMaterials && !WaterMaterialNames.IsWater(assigned[i].name))) continue;
                 assigned[i] = CreateGrayscaleWaterMaterial(assigned[i]);
                 waterMaterialClones.Add(assigned[i]);
             }
