@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace BioEden.NoDOF
 {
@@ -96,9 +97,24 @@ namespace BioEden.NoDOF
             Debug.Log("[BioEden.NoDOF] Lake water triangles: clean=" + cleanCount + ", colored=" + coloredCount);
         }
 
-        public void UpdateCleanMaterials(Action<Material> update)
+        public void UpdateCleanMaterials(Func<Material, Material> create)
         {
-            foreach (var clone in clones) update(clone);
+            var assigned = renderer.sharedMaterials;
+            for (int i = 0; i < clones.Count; i++)
+            {
+                var replacement = create(originals[i]);
+                UnityEngine.Object.Destroy(clones[i]);
+                clones[i] = replacement;
+                assigned[i * 2 + 1] = replacement;
+            }
+            renderer.sharedMaterials = assigned;
+        }
+
+        public void DrawCleanMask(CommandBuffer commands, Material material)
+        {
+            if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy) return;
+            for (int i = 0; i < originals.Length; i++)
+                commands.DrawRenderer(renderer, material, i * 2 + 1, 0);
         }
 
         public void Dispose()

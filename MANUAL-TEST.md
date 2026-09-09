@@ -66,3 +66,12 @@ With F1 enabled, compare a sanctuary with remaining research points against one 
 - Simplify Clean Lakes: On gives flat gray, Off gives a subtle static gray pattern.
 - Polluted water must keep the original appearance. Turning F1 off must restore all water materials.
 - Compare FPS with beta 8 at the same camera position. This version adds cached clean-water draw calls, with no per-frame scene scan.
+
+## Original clean-lake waves (1.3.0 beta 10)
+
+- With F1 on, set Simplify Clean Lakes Off and Confirm: original moving wave bands should return, in neutral gray.
+- Set On and Confirm: flat gray should return. Repeat both directions without restarting.
+- Sample lake interiors with a color picker; verify RGB equality and no displaced/upside-down image artifacts.
+- Check structures overlapping a clean lake and polluted lakes for unintended desaturation.
+- Check FPS in both modes; Off now requires a screen-color copy plus a clean-triangle pass.
+- Turn F1 off and verify original water colors and materials return.

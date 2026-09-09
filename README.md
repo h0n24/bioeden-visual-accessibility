@@ -1,4 +1,4 @@
-# BioEden – Visual Accessibility 1.3.0 beta 9
+# BioEden – Visual Accessibility 1.3.0 beta 10
 
 A Windows accessibility mod for BioEden 1.2.0.0 (Unity 6000.0.56f2).
 
@@ -23,7 +23,7 @@ The antenna outline does not change range or building rules. It uses the same ge
 
 The map filter uses the game's existing fullscreen image adjustment with saturation set to zero. It does not open the game's planet-information mode, so building, selecting objects and following normal game markers remain available. The UI stays colored. The filter icon is created only after entering the game world, sits before Help and displays the active key. The filter is disabled after a fresh installation. When enabled, only player structures, mineral objects and polluted water are redrawn in color; grass, trees, rocks, clean water stay desaturated. Ambient cloud and ground-fog VFX are hidden until the filter is switched off. The selective redraw avoids the full-scene performance cost of earlier builds. Extended Zoom suppresses Depth of Field while active and restores the user's Video setting when disabled.
 
-Clean water uses the game's shipped URP Unlit shader to avoid lighting tints. Lakes, rivers and source water share a neutral gray base. **Simplify Clean Lakes** selects a flat surface (On) or a subtle static grayscale pattern (Off), replacing the original animated lake waves only while the filter is active. Polluted water keeps its original material. Visual verification of shorelines and color neutrality is pending.
+Clean water uses the game's shipped URP Unlit shader to avoid lighting tints. Lakes, rivers and source water share a neutral gray base. **Simplify Clean Lakes** selects a flat surface (On) or the original animated lake waves (Off). With Off, a final pass converts rendered clean-lake pixels to grayscale, preserving the original wave masks and animation without lighting tint. This adds one screen-color copy and clean-lake draw pass while the filter is active; On skips this extra work. Polluted water keeps its original material. Visual verification of shorelines and color neutrality is pending.
 
 ## Screenshots
 
@@ -73,3 +73,7 @@ If the added layer or expected geometry fails, the mod keeps the original border
 `src/Runtime` contains the menu integration, effect control and outline geometry. `src/Patcher` contains the game-library patcher. `tests` contains the installation and patch-scope checks. Building requires .NET SDK 10 and the local original game libraries; see `Build.ps1`. Game libraries are not included in the distribution ZIP.
 
 The installer uses Mono.Cecil 0.11.6 (MIT); its license is included in `THIRD-PARTY-LICENSES.txt`.
+
+### Rebuilding the water shader
+
+The small shader bundle is embedded in the runtime DLL; players do not need Unity. The checked-in bundle was built with Unity 6000.4.5f1 for Windows. To rebuild it from source, run `BuildShaders.ps1 -UnityEditor "path/to/Unity.exe"`, then `Build.ps1`. An activated Unity Editor is required only for rebuilding the shader. In-game compatibility and rendering are manually verified.

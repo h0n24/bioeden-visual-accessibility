@@ -31,7 +31,7 @@ namespace BioEden.NoDOF
             simplifyCleanLakes = value;
             if (instance != null)
                 foreach (var lake in instance.lakeMeshes.Values)
-                    lake.UpdateCleanMaterials(ApplyCleanLakePalette);
+                    lake.UpdateCleanMaterials(CreateCleanLakeMaterial);
         }
         private static readonly List<Material> materials = new List<Material>();
         private readonly Dictionary<GameObject, int> preservedLayers = new Dictionary<GameObject, int>();
@@ -481,7 +481,6 @@ namespace BioEden.NoDOF
             return clone;
         }
 
-        private static Texture2D cleanLakePattern;
 
         private static Material CreateNeutralWaterMaterial(Material original)
         {
@@ -501,33 +500,34 @@ namespace BioEden.NoDOF
 
         private static Material CreateCleanLakeMaterial(Material original)
         {
-            var clone = CreateNeutralWaterMaterial(original);
-            ApplyCleanLakePalette(clone);
+            if (simplifyCleanLakes) return CreateNeutralWaterMaterial(original);
+            // Retain the original animated shader, UVs, masks and wave spacing.
+            // The final clean-triangle pass removes the lighting tint afterwards.
+            var clone = CreateGrayscaleWaterMaterial(original);
+            foreach (string suffix in new[] { "", "_clean" })
+            {
+                SetLakeGray(clone, "_ColorFloor" + suffix, 0.65f);
+                SetLakeGray(clone, "_ColorSides" + suffix, 0.65f);
+                SetLakeGray(clone, "_ColorBorders" + suffix, 0.72f);
+                SetLakeGray(clone, "_ColorCaustics" + suffix, 0.68f);
+                SetLakeGray(clone, "_ColorWaves0" + suffix, 0.78f);
+                SetLakeGray(clone, "_ColorWaves1" + suffix, 0.78f);
+            }
             return clone;
         }
 
-        private static void ApplyCleanLakePalette(Material material)
+        private static void SetLakeGray(Material material, string property, float gray)
         {
-            if (cleanLakePattern == null)
-            {
-                const int size = 64;
-                cleanLakePattern = new Texture2D(size, size, TextureFormat.RGBA32, false, true);
-                cleanLakePattern.name = "BioEden neutral lake pattern";
-                cleanLakePattern.wrapMode = TextureWrapMode.Repeat;
-                var pixels = new Color[size * size];
-                for (int y = 0; y < size; y++)
-                    for (int x = 0; x < size; x++)
-                    {
-                        float phase = x / (float)size + 0.08f * Mathf.Sin(y * 2f * Mathf.PI / size);
-                        float band = Mathf.Pow(0.5f + 0.5f * Mathf.Cos(phase * 2f * Mathf.PI), 16f);
-                        float gray = 0.95f + 0.05f * band;
-                        pixels[y * size + x] = new Color(gray, gray, gray, 1f);
-                    }
-                cleanLakePattern.SetPixels(pixels);
-                cleanLakePattern.Apply(false, true);
-            }
-            material.SetTexture("_BaseMap", simplifyCleanLakes ? Texture2D.whiteTexture : cleanLakePattern);
-            material.SetTextureScale("_BaseMap", new Vector2(8f, 8f));
+            if (material.HasProperty(property))
+                material.SetColor(property, new Color(gray, gray, gray, material.GetColor(property).a));
+        }
+
+        internal static bool NeedsLakeNeutralization => instance != null && !simplifyCleanLakes && instance.lakeMeshes.Count > 0;
+
+        internal static void DrawCleanLakeMask(CommandBuffer commands, Material material)
+        {
+            if (instance == null) return;
+            foreach (var lake in instance.lakeMeshes.Values) lake.DrawCleanMask(commands, material);
         }
 
         internal static void DrawCleanWater(CommandBuffer commands)

@@ -7,6 +7,8 @@
     <GameManaged Condition="'$(GameManaged)' == ''">D:\Games\BioEden\BioEden_Data\Managed</GameManaged>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="../Shaders/neutralwater" LogicalName="BioEden.NeutralWater" />
+    <Reference Include="UnityEngine.AssetBundleModule"><HintPath>$(GameManaged)\UnityEngine.AssetBundleModule.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Bag.Heritage.Settings"><HintPath>$(GameManaged)\Bag.Heritage.Settings.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Bag.Heritage.Modifiers"><HintPath>$(GameManaged)\Bag.Heritage.Modifiers.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UnityEngine.CoreModule"><HintPath>$(GameManaged)\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
