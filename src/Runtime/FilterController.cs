@@ -14,7 +14,6 @@ namespace BioEden.NoDOF
     // water shader can render after the fullscreen adjustment pass.
     public sealed class FilterController : MonoBehaviour
     {
-        public const int PreserveLayer = 31;
         // The game's water inspection displays the feature average as a whole
         // percentage (P0). Keep the same zero band so a feature shown as 0%
         // is treated as clean even when its raw average is a tiny fraction.
@@ -34,8 +33,7 @@ namespace BioEden.NoDOF
                     lake.UpdateCleanMaterials(CreateCleanLakeMaterial);
         }
         private static readonly List<Material> materials = new List<Material>();
-        private readonly Dictionary<GameObject, int> preservedLayers = new Dictionary<GameObject, int>();
-        private readonly Dictionary<Camera, int> cameraMasks = new Dictionary<Camera, int>();
+        private readonly Dictionary<Renderer, Material[]> preservedRenderers = new Dictionary<Renderer, Material[]>();
         private readonly Dictionary<Renderer, Material[]> cleanWaterMaterials = new Dictionary<Renderer, Material[]>();
         private readonly Dictionary<Renderer, Material[]> cleanWaterDraws = new Dictionary<Renderer, Material[]>();
         private readonly List<Material> waterMaterialClones = new List<Material>();
@@ -222,7 +220,7 @@ namespace BioEden.NoDOF
         private void RefreshPreservedObjects(bool forceWaterScan)
         {
             if (!filterEnabled) { RestorePreservedLayers(); return; }
-            EnsurePreserveCameras();
+            preservedRenderers.Clear();
             foreach (string typeName in new[]
             {
                 "Biomes.Structures.StructureIngame",
@@ -342,11 +340,7 @@ namespace BioEden.NoDOF
                     }
                     else
                     {
-                        if (preservedLayers.TryGetValue(renderer.gameObject, out int layer))
-                        {
-                            renderer.gameObject.layer = layer;
-                            preservedLayers.Remove(renderer.gameObject);
-                        }
+                        preservedRenderers.Remove(renderer);
                         // Ruin glass renders in a later pass and retains its own
                         // tint even after leaving the preserved-color layer.
                         ApplyCleanWaterMaterial(renderer, true);
@@ -363,35 +357,11 @@ namespace BioEden.NoDOF
                     foreach (var renderer in component.GetComponentsInChildren<Renderer>(true)) AddPreservedRenderer(renderer);
         }
 
-        private void EnsurePreserveCameras()
-        {
-            int bit = 1 << PreserveLayer;
-            foreach (var camera in UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsSortMode.None))
-            {
-                if (!cameraMasks.ContainsKey(camera)) cameraMasks.Add(camera, camera.cullingMask);
-                camera.cullingMask |= bit;
-            }
-        }
-
         private void AddPreservedRenderer(Renderer renderer)
         {
             if (renderer == null || renderer.gameObject.layer == LayerMask.NameToLayer("UI")) return;
-            // Unity layers are also used by gameplay raycasts. Antenna previews
-            // and their child meshes participate in the game's reveal/placement
-            // logic, so never move them to the post-process preserve layer.
-            // The range outline remains a separate screen-space UI overlay.
-            if (IsAntennaRenderer(renderer)) return;
-            var go = renderer.gameObject;
-            if (!preservedLayers.ContainsKey(go)) preservedLayers.Add(go, go.layer);
-            go.layer = PreserveLayer;
-        }
-
-        private static bool IsAntennaRenderer(Renderer renderer)
-        {
-            for (var current = renderer != null ? renderer.transform : null; current != null; current = current.parent)
-                if (current.name.IndexOf("antenna", StringComparison.OrdinalIgnoreCase) >= 0)
-                    return true;
-            return false;
+            // Cache draw inputs without changing physics/raycast layers.
+            preservedRenderers[renderer] = renderer.sharedMaterials;
         }
 
         private void SetWaterRendererPreservation(Renderer renderer, bool preserve)
@@ -410,12 +380,7 @@ namespace BioEden.NoDOF
             // A renderer can have been classified while pollution was non-zero
             // and become clean later. Remove that stale override on every water
             // refresh so a clean lake/river cannot stay in the color pass.
-            var go = renderer.gameObject;
-            if (preservedLayers.TryGetValue(go, out int originalLayer))
-            {
-                go.layer = originalLayer;
-                preservedLayers.Remove(go);
-            }
+            preservedRenderers.Remove(renderer);
             ApplyCleanWaterMaterial(renderer);
         }
 
@@ -444,12 +409,7 @@ namespace BioEden.NoDOF
             cleanWaterDraws.Clear();
             foreach (var clone in waterMaterialClones) if (clone != null) Destroy(clone);
             waterMaterialClones.Clear();
-            foreach (var pair in preservedLayers)
-                if (pair.Key != null) pair.Key.layer = pair.Value;
-            preservedLayers.Clear();
-            foreach (var pair in cameraMasks)
-                if (pair.Key != null) pair.Key.cullingMask = pair.Value;
-            cameraMasks.Clear();
+            preservedRenderers.Clear();
             waterScanDone = false;
         }
 
@@ -541,6 +501,28 @@ namespace BioEden.NoDOF
         {
             if (instance == null) return;
             foreach (var lake in instance.lakeMeshes.Values) lake.DrawCleanMask(commands, material);
+        }
+
+        internal static void DrawPreservedColors(CommandBuffer commands, Camera camera)
+        {
+            if (instance == null) return;
+            foreach (var entry in instance.preservedRenderers)
+            {
+                var renderer = entry.Key;
+                if (renderer == null || !renderer.enabled || renderer.forceRenderingOff ||
+                    !renderer.gameObject.activeInHierarchy || !renderer.isVisible ||
+                    (camera.cullingMask & (1 << renderer.gameObject.layer)) == 0) continue;
+                for (int i = 0; i < entry.Value.Length; i++)
+                {
+                    var material = entry.Value[i];
+                    if (material == null) continue;
+                    // Draw only the color pass, never shadow/depth/meta passes.
+                    int pass = material.FindPass("UniversalForward");
+                    if (pass < 0) pass = material.FindPass("UniversalForwardOnly");
+                    if (pass < 0) pass = material.FindPass("SRPDefaultUnlit");
+                    commands.DrawRenderer(renderer, material, i, pass < 0 ? 0 : pass);
+                }
+            }
         }
 
         internal static void DrawCleanWater(CommandBuffer commands)

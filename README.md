@@ -1,4 +1,6 @@
-# BioEden – Visual Accessibility 1.3.0 beta 11
+# BioEden – Visual Accessibility 1.3.0 beta 12
+
+Beta 12 preserves selected colors without changing object layers or camera masks. This isolates a suspected interaction with building placement and navigation. A reported freeze also produced missing NavMeshAgent exceptions in the game's OrbsManager/TimeManager; the root cause and in-game fix remain unconfirmed.
 
 A Windows accessibility mod for BioEden 1.2.0.0 (Unity 6000.0.56f2).
 

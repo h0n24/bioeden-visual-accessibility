@@ -1,5 +1,4 @@
 #pragma warning disable CS0618, CS0672
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -7,7 +6,7 @@ using UnityEngine.Rendering.Universal;
 namespace BioEden.NoDOF
 {
     // The game's AdjustImage pass desaturates the whole world. FilterController
-    // temporarily moves only selected renderers to PreserveLayer, so this pass
+    // caches selected renderers without changing their gameplay layers; this pass
     // redraws player structures, minerals and polluted water without touching
     // natural terrain or clean water.
     public sealed class PreserveColorFeature : ScriptableRendererFeature
@@ -24,7 +23,6 @@ namespace BioEden.NoDOF
 
         private sealed class PreserveColorPass : ScriptableRenderPass
         {
-            private FilteringSettings filtering;
             private Material neutralPixels;
             private bool shaderLoadAttempted;
             private static readonly int WaterPixels = Shader.PropertyToID("_BioEdenWaterPixels");
@@ -62,29 +60,19 @@ namespace BioEden.NoDOF
                 catch (System.Exception e) { Debug.LogError("[BioEden.NoDOF] " + e.Message); }
                 return neutralPixels != null;
             }
-            private readonly List<ShaderTagId> shaderTags = new List<ShaderTagId>
-            {
-                new ShaderTagId("UniversalForward"),
-                new ShaderTagId("UniversalForwardOnly"),
-                new ShaderTagId("SRPDefaultUnlit")
-            };
 
             public PreserveColorPass()
             {
                 renderPassEvent = RenderPassEvent.AfterRenderingPostProcessing;
-                // Selected structures and water can use transparent or cutout materials.
-                // The layer mask is exclusive, so including all queues cannot affect the
-                // rest of the scene and keeps those objects visible in the color pass.
-                filtering = new FilteringSettings(RenderQueueRange.all, 1 << FilterController.PreserveLayer);
+                // Selected objects retain their original physics and camera layers.
             }
 
             public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
             {
-                var drawing = CreateDrawingSettings(shaderTags, ref renderingData, SortingCriteria.CommonOpaque);
-                context.DrawRenderers(renderingData.cullResults, ref drawing, ref filtering);
                 var commands = CommandBufferPool.Get("BioEden neutral clean water");
                 try
                 {
+                    FilterController.DrawPreservedColors(commands, renderingData.cameraData.camera);
                     FilterController.DrawCleanWater(commands);
                     if (FilterController.NeedsLakeNeutralization && EnsureNeutralShader())
                     {

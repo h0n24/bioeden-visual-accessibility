@@ -1,5 +1,5 @@
 {
-  "version": "1.3.0-beta.11",
+  "version": "1.3.0-beta.12",
   "files": [
     {
       "name": "Assembly-CSharp.dll",
@@ -23,11 +23,11 @@
       ]
     }
   ],
-  "runtime": "608126E32FB20E302AF4E67E5290F94CFEF0FFB78F3C3D41532BBEAD1565B353",
+  "runtime": "3FAA1CB34544A7A4911E37F7D593DCFFF319A336DB1A9CEDFAD98E4EF849FF93",
   "payload": [
     {
       "path": "bin/BioEden.NoDOF.dll",
-      "sha256": "608126E32FB20E302AF4E67E5290F94CFEF0FFB78F3C3D41532BBEAD1565B353"
+      "sha256": "3FAA1CB34544A7A4911E37F7D593DCFFF319A336DB1A9CEDFAD98E4EF849FF93"
     },
     {
       "path": "bin/Mono.Cecil.dll",
@@ -35,7 +35,7 @@
     },
     {
       "path": "bin/NoDofPatcher.exe",
-      "sha256": "A2898BD36FC044016CA0656C3259114D55E8763202439F0456C8A1956E82A4AF"
+      "sha256": "DEBDA6288EE285B460D87928F277A384F059A59A9AFD23A5D52F667FE4AA915D"
     },
     {
       "path": "bin/NoDofPatcher.exe.config",

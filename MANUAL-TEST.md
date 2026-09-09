@@ -76,6 +76,15 @@ With F1 enabled, compare a sanctuary with remaining research points against one 
 - Check FPS in both modes; Off now requires a screen-color copy plus a clean-triangle pass.
 - Turn F1 off and verify original water colors and materials return.
 
+## Structure layer isolation (1.3.0 beta 12)
+
+- Restart the game before testing; existing sessions retain the old runtime.
+- With F1 active, build a power plant, connect power and place an antenna on the unexplored border.
+- Verify units keep moving, tiles are revealed and resource notifications expire normally.
+- Check building, mineral and water colors, including transparent surfaces, after toggling F1.
+- Compare FPS at the same camera position. Selected objects now use cached explicit draw calls without changing GameObject layers or camera masks.
+- If the freeze returns, preserve Player.log before restarting. The previous log contains missing NavMeshAgent errors in OrbsManager and TimeManager; their cause is not yet confirmed.
+
 ## Antenna reveal stability (1.3.0 beta 11)
 
 - Enable F1 and place an antenna in an area that still contains unexplored blue tiles.
