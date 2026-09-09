@@ -78,6 +78,8 @@ With F1 enabled, compare a sanctuary with remaining research points against one 
 
 ## Structure layer isolation (1.3.0 beta 12)
 
+Beta 13 performance follow-up: compare F1 On/Off at the same camera position and simulation speed after restarting. Verify selected colors, polluted water and transparent buildings, then repeat power-plant and antenna placement. Native drawing now uses rendering masks rather than individual commands; confirm both FPS and gameplay stability.
+
 - Restart the game before testing; existing sessions retain the old runtime.
 - With F1 active, build a power plant, connect power and place an antenna on the unexplored border.
 - Verify units keep moving, tiles are revealed and resource notifications expire normally.

@@ -1,4 +1,6 @@
-# BioEden – Visual Accessibility 1.3.0 beta 12
+# BioEden – Visual Accessibility 1.3.0 beta 13
+
+Beta 13 replaces beta 12's individual color draw commands with Unity's native culled and batched rendering. Selection uses rendering masks only; GameObject physics layers and camera masks remain unchanged. FPS improvement requires in-game confirmation.
 
 Beta 12 preserves selected colors without changing object layers or camera masks. This isolates a suspected interaction with building placement and navigation. A reported freeze also produced missing NavMeshAgent exceptions in the game's OrbsManager/TimeManager; the root cause and in-game fix remain unconfirmed.
 

@@ -23,6 +23,7 @@ namespace BioEden.NoDOF
 
         private sealed class PreserveColorPass : ScriptableRenderPass
         {
+            private FilteringSettings filtering = new FilteringSettings(RenderQueueRange.all, -1, FilterController.PreserveRenderingMask);
             private Material neutralPixels;
             private bool shaderLoadAttempted;
             private static readonly int WaterPixels = Shader.PropertyToID("_BioEdenWaterPixels");
@@ -69,10 +70,14 @@ namespace BioEden.NoDOF
 
             public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
             {
+                // Native culling, sorting and SRP batching replace per-object commands.
+                var drawing = CreateDrawingSettings(new ShaderTagId("UniversalForward"), ref renderingData, SortingCriteria.CommonOpaque);
+                drawing.SetShaderPassName(1, new ShaderTagId("UniversalForwardOnly"));
+                drawing.SetShaderPassName(2, new ShaderTagId("SRPDefaultUnlit"));
+                context.DrawRenderers(renderingData.cullResults, ref drawing, ref filtering);
                 var commands = CommandBufferPool.Get("BioEden neutral clean water");
                 try
                 {
-                    FilterController.DrawPreservedColors(commands, renderingData.cameraData.camera);
                     FilterController.DrawCleanWater(commands);
                     if (FilterController.NeedsLakeNeutralization && EnsureNeutralShader())
                     {
