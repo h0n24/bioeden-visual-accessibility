@@ -33,6 +33,7 @@ namespace BioEden.NoDOF
             public VisualEffect Effect;
             public Renderer Renderer;
             public bool WasPaused;
+            public bool WasActive;
             public bool WasHidden;
         }
         private readonly List<HiddenAtmosphere> hiddenAtmosphere = new List<HiddenAtmosphere>();
@@ -272,7 +273,13 @@ namespace BioEden.NoDOF
 
         private void RefreshCloudColors(bool forceScan)
         {
-            if (cloudScanDone) return;
+            if (cloudScanDone)
+            {
+                foreach (var item in hiddenAtmosphere)
+                    if (item.Effect != null && item.Effect.gameObject.activeSelf)
+                        item.Effect.gameObject.SetActive(false);
+                return;
+            }
             foreach (var effect in UnityEngine.Object.FindObjectsByType<VisualEffect>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 if (effect == null || effect.visualEffectAsset == null) continue;
@@ -281,15 +288,19 @@ namespace BioEden.NoDOF
                 // exhaust, construction feedback, or fog-of-war rendering.
                 if (!(graph.StartsWith("VFX_CloudsFog", StringComparison.Ordinal) ||
                       graph.StartsWith("VFX_GroundFog", StringComparison.Ordinal) ||
-                      graph.StartsWith("VFX_Tundra_SmokeAsh", StringComparison.Ordinal))) continue;
+                      graph.StartsWith("VFX_Tundra_SmokeAsh", StringComparison.Ordinal) ||
+                      graph.StartsWith("VFX_SandDust", StringComparison.Ordinal))) continue;
                 var renderer = effect.GetComponent<Renderer>();
                 hiddenAtmosphere.Add(new HiddenAtmosphere {
                     Effect = effect, Renderer = renderer,
                     WasPaused = effect.pause,
+                    WasActive = effect.gameObject.activeSelf,
                     WasHidden = renderer != null && renderer.forceRenderingOff
                 });
                 effect.pause = true;
                 if (renderer != null) renderer.forceRenderingOff = true;
+                effect.gameObject.SetActive(false);
+                Debug.Log("[BioEden.NoDOF] Hidden atmosphere graph: " + graph);
             }
             cloudScanDone = true;
             Debug.Log("[BioEden.NoDOF] Hidden ambient cloud/fog effects: " + hiddenAtmosphere.Count);
@@ -358,7 +369,7 @@ namespace BioEden.NoDOF
             player = null;
             foreach (var item in hiddenAtmosphere)
             {
-                if (item.Effect != null) item.Effect.pause = item.WasPaused;
+                if (item.Effect != null) { item.Effect.pause = item.WasPaused; item.Effect.gameObject.SetActive(item.WasActive); }
                 if (item.Renderer != null) item.Renderer.forceRenderingOff = item.WasHidden;
             }
             hiddenAtmosphere.Clear();
