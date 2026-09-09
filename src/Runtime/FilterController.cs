@@ -28,25 +28,16 @@ namespace BioEden.NoDOF
         private readonly Dictionary<Camera, int> cameraMasks = new Dictionary<Camera, int>();
         private readonly Dictionary<Renderer, Material[]> cleanWaterMaterials = new Dictionary<Renderer, Material[]>();
         private readonly List<Material> waterMaterialClones = new List<Material>();
-        private sealed class EnvironmentalColor
+        private sealed class HiddenAtmosphere
         {
-            public string Property;
-            public Vector4 Original;
+            public VisualEffect Effect;
+            public Renderer Renderer;
+            public bool WasPaused;
+            public bool WasHidden;
         }
-
-        private static readonly string[] EnvironmentalKeywords =
-        {
-            "cloud", "fog", "smoke", "dust"
-        };
-
-        // The game's atmospheric graphs use several property names. Keep the
-        // list explicit so unrelated gameplay VFX are never modified.
-        private static readonly string[] EnvironmentalColorProperties =
-        {
-            "Color", "Color 1", "Color 2", "Color 3", "color", "c"
-        };
-
-        private readonly Dictionary<VisualEffect, List<EnvironmentalColor>> cloudColors = new Dictionary<VisualEffect, List<EnvironmentalColor>>();
+        private readonly List<HiddenAtmosphere> hiddenAtmosphere = new List<HiddenAtmosphere>();
+        private Component worldCameraInput;
+        private float nextCameraSearch;
         private readonly List<Renderer> waterRenderers = new List<Renderer>();
         private readonly Dictionary<Renderer, LakeWaterMesh> lakeMeshes = new Dictionary<Renderer, LakeWaterMesh>();
         private readonly Dictionary<object, int> waterFeatureAtCoord = new Dictionary<object, int>();
@@ -281,54 +272,27 @@ namespace BioEden.NoDOF
 
         private void RefreshCloudColors(bool forceScan)
         {
-            if (forceScan || !cloudScanDone)
+            if (cloudScanDone) return;
+            foreach (var effect in UnityEngine.Object.FindObjectsByType<VisualEffect>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
-                cloudColors.Clear();
-                foreach (var effect in UnityEngine.Object.FindObjectsByType<VisualEffect>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-                {
-                    if (effect == null || !IsEnvironmentalEffect(effect)) continue;
-                    try
-                    {
-                        var colors = new List<EnvironmentalColor>();
-                        foreach (string property in EnvironmentalColorProperties)
-                        {
-                            if (!effect.HasVector4(property)) continue;
-                            colors.Add(new EnvironmentalColor
-                            {
-                                Property = property,
-                                Original = effect.GetVector4(property)
-                            });
-                        }
-                        if (colors.Count > 0) cloudColors.Add(effect, colors);
-                    }
-                    catch (Exception e) { Debug.LogWarning("[BioEden.NoDOF] Cloud color read failed: " + e.Message); }
-                }
-                cloudScanDone = true;
-                int propertyCount = 0;
-                foreach (var colors in cloudColors.Values) propertyCount += colors.Count;
-                Debug.Log("[BioEden.NoDOF] Environmental VFX color controls: effects=" + cloudColors.Count + ", properties=" + propertyCount);
+                if (effect == null || effect.visualEffectAsset == null) continue;
+                string graph = effect.visualEffectAsset.name;
+                // Exact shipped ambient graph families; do not hide building
+                // exhaust, construction feedback, or fog-of-war rendering.
+                if (!(graph.StartsWith("VFX_CloudsFog", StringComparison.Ordinal) ||
+                      graph.StartsWith("VFX_GroundFog", StringComparison.Ordinal) ||
+                      graph.StartsWith("VFX_Tundra_SmokeAsh", StringComparison.Ordinal))) continue;
+                var renderer = effect.GetComponent<Renderer>();
+                hiddenAtmosphere.Add(new HiddenAtmosphere {
+                    Effect = effect, Renderer = renderer,
+                    WasPaused = effect.pause,
+                    WasHidden = renderer != null && renderer.forceRenderingOff
+                });
+                effect.pause = true;
+                if (renderer != null) renderer.forceRenderingOff = true;
             }
-            foreach (var pair in cloudColors)
-                if (pair.Key != null)
-                {
-                    foreach (var color in pair.Value)
-                    {
-                        float luma = CloudColorMath.Luma(color.Original.x, color.Original.y, color.Original.z);
-                        pair.Key.SetVector4(color.Property, new Vector4(luma, luma, luma, color.Original.w));
-                    }
-                }
-        }
-
-        private static bool IsEnvironmentalEffect(VisualEffect effect)
-        {
-            string objectName = effect.gameObject.name;
-            string assetName = effect.visualEffectAsset == null ? string.Empty : effect.visualEffectAsset.name;
-            foreach (string keyword in EnvironmentalKeywords)
-            {
-                if (objectName.Contains(keyword, StringComparison.OrdinalIgnoreCase)) return true;
-                if (assetName.Contains(keyword, StringComparison.OrdinalIgnoreCase)) return true;
-            }
-            return false;
+            cloudScanDone = true;
+            Debug.Log("[BioEden.NoDOF] Hidden ambient cloud/fog effects: " + hiddenAtmosphere.Count);
         }
 
         private void AddRenderersUnder(Type componentType)
@@ -392,11 +356,12 @@ namespace BioEden.NoDOF
             waterGrid = null;
             waterFeatures = null;
             player = null;
-            foreach (var pair in cloudColors)
-                if (pair.Key != null)
-                    foreach (var color in pair.Value)
-                        pair.Key.SetVector4(color.Property, color.Original);
-            cloudColors.Clear();
+            foreach (var item in hiddenAtmosphere)
+            {
+                if (item.Effect != null) item.Effect.pause = item.WasPaused;
+                if (item.Renderer != null) item.Renderer.forceRenderingOff = item.WasHidden;
+            }
+            hiddenAtmosphere.Clear();
             cloudScanDone = false;
             foreach (var pair in cleanWaterMaterials)
             {
@@ -564,17 +529,24 @@ namespace BioEden.NoDOF
 
         private bool IsInGameWorld()
         {
-            var cameraType = Type.GetType("Biomes.Cam.CameraInputIngame, Assembly-CSharp");
-            if (cameraType == null || UnityEngine.Object.FindObjectsByType(cameraType, FindObjectsSortMode.None).Length == 0) return false;
+            // Cache the live component. Searching all scene objects each frame
+            // incurred overhead even with the filter disabled. Unity invalidates
+            // the cached reference when its scene is unloaded.
+            if (worldCameraInput == null)
+            {
+                if (Time.unscaledTime < nextCameraSearch) return false;
+                nextCameraSearch = Time.unscaledTime + 0.5f;
+                var cameraType = Type.GetType("Biomes.Cam.CameraInputIngame, Assembly-CSharp");
+                if (cameraType == null) return false;
+                worldCameraInput = UnityEngine.Object.FindFirstObjectByType(cameraType) as Component;
+                if (worldCameraInput == null) return false;
+            }
             var gameType = Type.GetType("Biomes.Game, Assembly-CSharp");
             if (gameType == null) return false;
             try
             {
                 object game = FindProperty(gameType, "Singleton")?.GetValue(null);
-                if (game == null)
-                    game = UnityEngine.Object.FindObjectsByType(gameType, FindObjectsSortMode.None).Length > 0
-                        ? UnityEngine.Object.FindObjectsByType(gameType, FindObjectsSortMode.None)[0]
-                        : null;
+                if (game == null) return false;
                 if (game == null) return false;
                 object currentPlayer = FindProperty(gameType, "Plyr")?.GetValue(game);
                 object worldGrid = FindProperty(currentPlayer?.GetType(), "WorldGrid")?.GetValue(currentPlayer);

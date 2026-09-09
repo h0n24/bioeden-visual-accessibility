@@ -21,3 +21,9 @@ The automated geometry tests cover mixed clean/polluted lakes in one mesh, unkno
 ## Cloud VFX
 
 The colored atmospheric patches are Unity Visual Effect objects rather than ordinary mesh renderers. The shipped cloud and ground-fog graphs expose one or more vector color inputs (`Color`, `Color 1`, and `Color 3` depending on quality and biome). The runtime now identifies environmental effects by their object or graph name (`cloud`, `fog`, `smoke`, or `dust`), stores every exposed color input, and sets each RGB triplet to luminance while preserving alpha. Disabling the filter restores the stored values. Gameplay effects are not selected by this rule. The previous beta2 log showed `Cloud color controls: 0`, which confirmed that matching only the literal `Cloud` object name did not reach the visible fog layer.
+
+## Beta 4 ambient effects and performance
+
+Beta 3 discovered four effects with twelve color inputs in the local player log, but the user still observed colored clouds. Beta 4 therefore pauses and hides renderers for the shipped VFX_CloudsFog, VFX_GroundFog and VFX_Tundra_SmokeAsh graph families, including quality variants. Original pause and forceRenderingOff states are restored on filter exit. Building smoke and fog of war are excluded.
+
+The per-frame CameraInputIngame scene search has been replaced with a cached component; discovery retries at most twice per second while absent. Play state is still checked on each frame to preserve loading-screen gating. The filter still performs periodic object discovery and a selective color redraw; these remain potential costs. No in-game frame-time measurement was performed. The Steam report describes visual tearing, not quantified FPS loss.
