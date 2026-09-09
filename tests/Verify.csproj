@@ -5,4 +5,5 @@
   <ItemGroup><Compile Include="../src/Runtime/WaterTriangles.cs" Link="WaterTriangles.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../src/Runtime/WaterMaterialNames.cs" Link="WaterMaterialNames.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../src/Runtime/CloudColorMath.cs" Link="CloudColorMath.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../src/Runtime/ReleaseVersion.cs" Link="ReleaseVersion.cs" /></ItemGroup>
 </Project>

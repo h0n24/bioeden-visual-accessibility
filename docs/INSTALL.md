@@ -4,7 +4,7 @@ The release ZIP is the easiest option for regular players. It does not require G
 
 1. Close BioEden.
 2. Download the ZIP from the repository's **Releases** page and extract it.
-3. Run `install.ps1` with PowerShell, or double-click `Install.cmd` after placing the extracted folder next to the `BioEden` folder.
+3. Double-click `Install.cmd`. If the game is not found, enter the folder containing `BioEden.exe` when prompted. The ZIP can be extracted anywhere.
 4. Start the game normally.
 
 If the game is not detected automatically, pass its folder explicitly:
@@ -23,3 +23,5 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Uninstall
 ```
 
 The mod is currently tested for BioEden 1.2.0.0 on Windows. The game itself is not redistributed.
+
+To upgrade, close the game, extract the newest release ZIP into a fresh folder and run its Install.cmd. Do not run an installer from an older download. Uninstalling first is unnecessary. Settings → Accessibility shows the installed Mod version and offers a manual GitHub update check (select Check updates and Confirm). Beta releases are included; updates are never installed automatically.

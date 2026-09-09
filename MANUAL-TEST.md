@@ -78,6 +78,14 @@ With F1 enabled, compare a sanctuary with remaining research points against one 
 
 ## Structure layer isolation (1.3.0 beta 12)
 
+## Version and update menu (1.3.0 beta 14)
+
+- Verify the Accessibility Mod row matches the installed package version.
+- Select Check updates (Confirm), confirm, then Check GitHub. Check a successful response and an offline response. The game must stay responsive.
+- Close the panel while checking; reopening and restarting the game must not automatically send requests.
+- Confirm Open downloads opens the project's releases page. Upgrade by extracting the ZIP and running Install.cmd with the game closed.
+- Confirm the normal minimap remains usable. The original game ignores clicks inside the compass rectangle; no minimap behavior was patched in this release.
+
 Beta 13 performance follow-up: compare F1 On/Off at the same camera position and simulation speed after restarting. Verify selected colors, polluted water and transparent buildings, then repeat power-plant and antenna placement. Native drawing now uses rendering masks rather than individual commands; confirm both FPS and gameplay stability.
 
 - Restart the game before testing; existing sessions retain the old runtime.

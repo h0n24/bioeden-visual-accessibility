@@ -108,6 +108,22 @@ namespace BioEden.NoDOF
         }
     }
 
+    public sealed class ModInfoSetting : ToggleSetting
+    {
+        public const string SettingKey = "BioEden.NoDOF.Info";
+        public ModInfoSetting(object manager) : base(manager) { }
+        public override string Key => SettingKey;
+        public override string Label => "Mod " + ModUpdates.InstalledVersion;
+        public override List<string> Texts => new List<string> { "Installed", "Check updates (Confirm)" };
+        public override int DefaultIndex => 0;
+        protected override void ApplyValue(bool value) { }
+        public override void Apply(int index)
+        {
+            SaveValue(0); // An action must never repeat on startup.
+            if (index == 1) ModUpdates.Open();
+        }
+    }
+
     public static partial class Runtime
     {
         private static bool enabled;
@@ -137,10 +153,11 @@ namespace BioEden.NoDOF
                     if (!entries.Exists(s => s?.Key == MapFilterSetting.SettingKey)) entries.Add(new MapFilterSetting(manager));
                     if (!entries.Exists(s => s?.Key == MapFilterHotkeySetting.SettingKey)) entries.Add(new MapFilterHotkeySetting(manager));
                     if (!entries.Exists(s => s?.Key == SimplifyCleanLakesSetting.SettingKey)) entries.Add(new SimplifyCleanLakesSetting(manager));
+                    if (!entries.Exists(s => s?.Key == ModInfoSetting.SettingKey)) entries.Add(new ModInfoSetting(manager));
                 }
                 settings[key] = entries.ToArray();
             }
-            Debug.Log("[BioEden.NoDOF] 1.3.0: registered visual accessibility settings.");
+            Debug.Log("[BioEden.NoDOF] " + ModUpdates.InstalledVersion + ": registered visual accessibility settings.");
             return settings;
         }
 

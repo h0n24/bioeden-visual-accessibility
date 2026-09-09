@@ -1,4 +1,8 @@
-# BioEden – Visual Accessibility 1.3.0 beta 13
+# BioEden – Visual Accessibility 1.3.0 beta 14
+
+**Installed version and updates:** Settings → Accessibility includes a Mod version row. Select “Check updates (Confirm)” and confirm, then click “Check GitHub”. The check runs only on request, includes downloadable beta releases, and reports connection failures. “Open downloads” opens GitHub; nothing is installed automatically. Extract the newest release ZIP and run Install.cmd with the game closed to upgrade, without uninstalling first.
+
+Beta 14 also fixes the CMD launchers to use game-folder discovery and a path prompt. In a same-save comparison, the user measured approximately 140 FPS paused, 60–112 FPS at 1× and 50–56 FPS at maximum speed **without the mod**. The simulation slowdown therefore also occurs in the original game; its root cause remains unknown.
 
 Beta 13 replaces beta 12's individual color draw commands with Unity's native culled and batched rendering. Selection uses rendering masks only; GameObject physics layers and camera masks remain unchanged. FPS improvement requires in-game confirmation.
 

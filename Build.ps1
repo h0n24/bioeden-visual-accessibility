@@ -11,7 +11,7 @@ foreach ($f in $m.files) {
     if ((Sha $p) -ne $f.original) { throw "Unsupported original: $p" }
     $originals += $p
 }
-dotnet build (Join-Path $PSScriptRoot 'src\Runtime\BioEden.NoDOF.csproj') -c Release -o (Join-Path $PSScriptRoot 'build\runtime') "-p:GameManaged=$managed"
+dotnet build (Join-Path $PSScriptRoot 'src\Runtime\BioEden.NoDOF.csproj') -c Release -o (Join-Path $PSScriptRoot 'build\runtime') "-p:GameManaged=$managed" "-p:Version=$($m.version)"
 if ($LASTEXITCODE) { throw 'Runtime build failed.' }
 dotnet build (Join-Path $PSScriptRoot 'src\Patcher\NoDofPatcher.csproj') -c Release -o (Join-Path $PSScriptRoot 'build\patcher')
 if ($LASTEXITCODE) { throw 'Patcher build failed.' }
