@@ -75,3 +75,11 @@ With F1 enabled, compare a sanctuary with remaining research points against one 
 - Check structures overlapping a clean lake and polluted lakes for unintended desaturation.
 - Check FPS in both modes; Off now requires a screen-color copy plus a clean-triangle pass.
 - Turn F1 off and verify original water colors and materials return.
+
+## Antenna reveal stability (1.3.0 beta 11)
+
+- Enable F1 and place an antenna in an area that still contains unexplored blue tiles.
+- Confirm that the antenna reveals tiles and that resource plus/minus notifications continue updating.
+- Move the antenna preview repeatedly before confirming placement; the range outline should follow it without freezing the UI.
+- Repeat with Antenna Range Outline Off. The reveal behavior should be identical; only the extra outline should disappear.
+- Toggle F1 off and on around a placement. The antenna should keep its normal placement and reveal behavior in both states.

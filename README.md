@@ -1,4 +1,4 @@
-# BioEden – Visual Accessibility 1.3.0 beta 10
+# BioEden – Visual Accessibility 1.3.0 beta 11
 
 A Windows accessibility mod for BioEden 1.2.0.0 (Unity 6000.0.56f2).
 
@@ -19,7 +19,7 @@ All options use the game's existing settings UI, including arrow navigation, **C
 
 Press **Confirm** after changing a value. A restart is not required. Saved values remain persistent. **Default** restores the game's default values, including these settings. The filter can be toggled with its selected key or with the planet icon immediately before the Help icon in the top-right corner.
 
-The antenna outline does not change range or building rules. It uses the same geometry as the game's original border and follows its movement and visibility. Version 1.2.1 projects the border into a screen-space layer above the fog effect: the white line is 5.5 pixels wide and the blue center is 2 pixels wide. The line is intentionally visible over obstacles and unexplored blue areas. It does not capture input and stays below normal menu overlays. Turning the setting off removes the added outline.
+The antenna outline does not change range or building rules. It uses the same geometry as the game's original border and follows its movement and visibility. Version 1.2.1 projects the border into a screen-space layer above the fog effect: the white line is 5.5 pixels wide and the blue center is 2 pixels wide. The line is intentionally visible over obstacles and unexplored blue areas. It does not capture input and stays below normal menu overlays. Turning the setting off removes the added outline. While the map filter is active, antenna meshes keep their original gameplay layer so the game's placement and reveal raycasts continue to work normally.
 
 The map filter uses the game's existing fullscreen image adjustment with saturation set to zero. It does not open the game's planet-information mode, so building, selecting objects and following normal game markers remain available. The UI stays colored. The filter icon is created only after entering the game world, sits before Help and displays the active key. The filter is disabled after a fresh installation. When enabled, only player structures, mineral objects and polluted water are redrawn in color; grass, trees, rocks, clean water stay desaturated. Ambient cloud and ground-fog VFX are hidden until the filter is switched off. The selective redraw avoids the full-scene performance cost of earlier builds. Extended Zoom suppresses Depth of Field while active and restores the user's Video setting when disabled.
 

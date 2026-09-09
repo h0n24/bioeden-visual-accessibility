@@ -376,9 +376,22 @@ namespace BioEden.NoDOF
         private void AddPreservedRenderer(Renderer renderer)
         {
             if (renderer == null || renderer.gameObject.layer == LayerMask.NameToLayer("UI")) return;
+            // Unity layers are also used by gameplay raycasts. Antenna previews
+            // and their child meshes participate in the game's reveal/placement
+            // logic, so never move them to the post-process preserve layer.
+            // The range outline remains a separate screen-space UI overlay.
+            if (IsAntennaRenderer(renderer)) return;
             var go = renderer.gameObject;
             if (!preservedLayers.ContainsKey(go)) preservedLayers.Add(go, go.layer);
             go.layer = PreserveLayer;
+        }
+
+        private static bool IsAntennaRenderer(Renderer renderer)
+        {
+            for (var current = renderer != null ? renderer.transform : null; current != null; current = current.parent)
+                if (current.name.IndexOf("antenna", StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+            return false;
         }
 
         private void SetWaterRendererPreservation(Renderer renderer, bool preserve)
