@@ -1,6 +1,6 @@
-# BioEden – Visual Accessibility 1.3.0 beta 15
+# BioEden – Visual Accessibility 1.3.0 beta 16
 
-**Installed version and updates:** Settings → Accessibility includes a Mod version row. Click “Mod information / Updates”, then “Check GitHub”. The check runs only on request, includes downloadable beta releases, and reports connection failures. “Open downloads” opens GitHub; nothing is installed automatically. Extract the newest release ZIP and run Install.cmd with the game closed to upgrade, without uninstalling first.
+**Installed version and updates:** Settings → Accessibility includes a Mod version row. Click “Mod info, updates”, then “Check GitHub”. The check runs only on request, includes downloadable beta releases, and reports connection failures. “Open downloads” opens GitHub; nothing is installed automatically. Extract the newest release ZIP and run Install.cmd with the game closed to upgrade, without uninstalling first.
 
 Beta 14 also fixes the CMD launchers to use game-folder discovery and a path prompt. In a same-save comparison, the user measured approximately 140 FPS paused, 60–112 FPS at 1× and 50–56 FPS at maximum speed **without the mod**. The simulation slowdown therefore also occurs in the original game; its root cause remains unknown.
 

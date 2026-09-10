@@ -114,7 +114,7 @@ namespace BioEden.NoDOF
         public ModInfoSetting(object manager) : base(manager) { }
         public override string Key => SettingKey;
         public override string Label => "Mod " + ModUpdates.InstalledVersion;
-        public override List<string> Texts => new List<string> { "Mod information / Updates" };
+        public override List<string> Texts => new List<string> { "Mod info, updates" };
         public override int DefaultIndex => 0;
         protected override void ApplyValue(bool value) { }
         public override void Apply(int index)
