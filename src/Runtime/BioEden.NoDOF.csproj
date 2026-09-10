@@ -8,7 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="UnityEngine.UnityWebRequestModule"><HintPath>$(GameManaged)\UnityEngine.UnityWebRequestModule.dll</HintPath><Private>false</Private></Reference>
-    <Reference Include="UnityEngine.JSONSerializeModule"><HintPath>$(GameManaged)\UnityEngine.JSONSerializeModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Newtonsoft.Json"><HintPath>$(GameManaged)\Newtonsoft.Json.dll</HintPath><Private>false</Private></Reference>
     <EmbeddedResource Include="../Shaders/neutralwater" LogicalName="BioEden.NeutralWater" />
     <Reference Include="UnityEngine.AssetBundleModule"><HintPath>$(GameManaged)\UnityEngine.AssetBundleModule.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Bag.Heritage.Settings"><HintPath>$(GameManaged)\Bag.Heritage.Settings.dll</HintPath><Private>false</Private></Reference>

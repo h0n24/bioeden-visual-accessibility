@@ -19,18 +19,11 @@ namespace BioEden.NoDOF
         private UnityWebRequest request;
         private float nextCheck;
 
-        // Populated by Unity's JSON serializer.
-#pragma warning disable CS0649
-        [Serializable] private class ReleaseList { public Release[] items; }
-        [Serializable] private class Release { public string tag_name; public bool draft; public Asset[] assets; }
-        [Serializable] private class Asset { public string name; }
-#pragma warning restore CS0649
 
         public static void Open()
         {
             if (instance != null) { instance.gameObject.SetActive(true); return; }
             var root = new GameObject("BioEden mod updates", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-            DontDestroyOnLoad(root);
             instance = root.AddComponent<ModUpdates>();
             var canvas = root.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay; canvas.sortingOrder = 31000;
@@ -59,22 +52,22 @@ namespace BioEden.NoDOF
             yield return request.SendWebRequest();
             try
             {
-                if (request.result != UnityWebRequest.Result.Success) throw new InvalidOperationException();
-                var releases = JsonUtility.FromJson<ReleaseList>("{\"items\":" + request.downloadHandler.text + "}");
-                Version newest = null; string tag = null;
-                foreach (var release in releases.items ?? Array.Empty<Release>())
-                {
-                    if (release.draft || !ReleaseVersion.TryVersion(release.tag_name, out Version candidate)) continue;
-                    bool zip = false;
-                    foreach (var asset in release.assets ?? Array.Empty<Asset>())
-                        if (asset.name != null && asset.name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) zip = true;
-                    if (zip && (newest == null || candidate > newest)) { newest = candidate; tag = release.tag_name; }
-                }
-                if (newest == null || !ReleaseVersion.TryVersion(InstalledVersion, out Version installed)) throw new InvalidOperationException();
+                if (request.result != UnityWebRequest.Result.Success)
+                    throw new InvalidOperationException("Connection failed: HTTP " + request.responseCode + " — " + request.error);
+                string tag = ReleaseVersion.NewestDownload(request.downloadHandler.text);
+                if (!ReleaseVersion.TryVersion(tag, out Version newest)) throw new InvalidOperationException("GitHub returned no supported downloadable release.");
+                if (!ReleaseVersion.TryVersion(InstalledVersion, out Version installed)) throw new InvalidOperationException("Installed version could not be read.");
                 status.text = "Installed: " + InstalledVersion + "\n" + (newest > installed ? "Update available: " + tag : "No newer downloadable release found.") +
                     "\nTo update: close BioEden, extract the latest ZIP\nand run Install.cmd. No uninstall is needed.";
             }
-            catch { status.text = "Installed: " + InstalledVersion + "\nCould not check GitHub (offline or rate limited).\nUse Open downloads to check manually."; }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[BioEden.NoDOF] Update check: HTTP " + request.responseCode + "; " + e);
+                string reason = request.result != UnityWebRequest.Result.Success
+                    ? (request.responseCode == 403 || request.responseCode == 429 ? "GitHub refused the request (HTTP " + request.responseCode + ")." : "Connection failed: " + request.error)
+                    : "Could not read GitHub's release information.";
+                status.text = "Installed: " + InstalledVersion + "\n" + reason + "\nUse Open downloads. Details are in Player.log.";
+            }
             finally { request.Dispose(); request = null; }
             while (Time.realtimeSinceStartup < nextCheck) yield return null;
             check.interactable = true;

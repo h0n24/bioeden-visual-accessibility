@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
   <ItemGroup><PackageReference Include="Mono.Cecil" Version="0.11.6" /></ItemGroup>
+  <ItemGroup><Reference Include="Newtonsoft.Json"><HintPath>D:\Games\BioEden\BioEden_Data\Managed\Newtonsoft.Json.dll</HintPath></Reference></ItemGroup>
   <ItemGroup><Compile Include="../src/Runtime/FeatureMath.cs" Link="FeatureMath.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../src/Runtime/WaterTriangles.cs" Link="WaterTriangles.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../src/Runtime/WaterMaterialNames.cs" Link="WaterMaterialNames.cs" /></ItemGroup>

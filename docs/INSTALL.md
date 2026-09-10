@@ -24,4 +24,4 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Uninstall
 
 The mod is currently tested for BioEden 1.2.0.0 on Windows. The game itself is not redistributed.
 
-To upgrade, close the game, extract the newest release ZIP into a fresh folder and run its Install.cmd. Do not run an installer from an older download. Uninstalling first is unnecessary. Settings → Accessibility shows the installed Mod version and offers a manual GitHub update check (select Check updates and Confirm). Beta releases are included; updates are never installed automatically.
+To upgrade, close the game, extract the newest release ZIP into a fresh folder and run its Install.cmd. Do not run an installer from an older download. Uninstalling first is unnecessary. Settings → Accessibility shows the installed Mod version and offers a manual GitHub update check (click Mod information / Updates). Beta releases are included; updates are never installed automatically.

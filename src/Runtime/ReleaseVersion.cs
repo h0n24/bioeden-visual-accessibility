@@ -1,6 +1,22 @@
 using System;
 using System.Text.RegularExpressions;
 namespace BioEden.NoDOF { internal static class ReleaseVersion {
+        internal static string NewestDownload(string json)
+        {
+            var releases = Newtonsoft.Json.Linq.JArray.Parse(json);
+            Version newest = null;
+            string tag = null;
+            foreach (var release in releases)
+            {
+                if ((bool?)release["draft"] == true || !TryVersion((string)release["tag_name"], out Version candidate)) continue;
+                bool zip = false;
+                if (release["assets"] is Newtonsoft.Json.Linq.JArray assets)
+                    foreach (var asset in assets)
+                        if (((string)asset["name"])?.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) == true) zip = true;
+                if (zip && (newest == null || candidate > newest)) { newest = candidate; tag = (string)release["tag_name"]; }
+            }
+            return tag;
+        }
         // Stable releases outrank prereleases; beta numbers compare numerically.
         internal static bool TryVersion(string value, out Version version)
         {

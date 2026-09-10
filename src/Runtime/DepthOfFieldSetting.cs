@@ -108,20 +108,20 @@ namespace BioEden.NoDOF
         }
     }
 
-    public sealed class ModInfoSetting : ToggleSetting
+    public sealed class ModInfoSetting : ToggleSetting, ISettingButton
     {
         public const string SettingKey = "BioEden.NoDOF.Info";
         public ModInfoSetting(object manager) : base(manager) { }
         public override string Key => SettingKey;
         public override string Label => "Mod " + ModUpdates.InstalledVersion;
-        public override List<string> Texts => new List<string> { "Installed", "Check updates (Confirm)" };
+        public override List<string> Texts => new List<string> { "Mod information / Updates" };
         public override int DefaultIndex => 0;
         protected override void ApplyValue(bool value) { }
         public override void Apply(int index)
         {
-            SaveValue(0); // An action must never repeat on startup.
-            if (index == 1) ModUpdates.Open();
+            SaveValue(0); // Clear beta 14's saved action without opening anything.
         }
+        public void ClickButton() => ModUpdates.Open();
     }
 
     public static partial class Runtime

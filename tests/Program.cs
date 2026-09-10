@@ -2,6 +2,13 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 string managed = args[0];
+using (var runtime = AssemblyDefinition.ReadAssembly(Path.Combine(managed, "BioEden.NoDOF.dll")))
+{
+    var info = runtime.MainModule.Types.Single(t => t.Name == "ModInfoSetting");
+    if (!info.Interfaces.Any(i => i.InterfaceType.Name == "ISettingButton")) throw new Exception("Mod info must be a native button.");
+    if (info.Methods.Single(m => m.Name == "Apply").Body.Instructions.Any(i => i.Operand is MethodReference r && r.Name == "Open")) throw new Exception("Settings load must not open the popup.");
+    if (!info.Methods.Single(m => m.Name == "ClickButton").Body.Instructions.Any(i => i.Operand is MethodReference r && r.Name == "Open")) throw new Exception("Button must open mod info.");
+}
 GeometryChecks.Run();
 WaterChecks.Run();
 foreach (var pair in new[] { ("1.3.0-beta.9", "v1.3.0-beta.14"), ("1.3.0-beta.14", "1.3.0"), ("1.3.0", "1.3.1-beta.1") })
@@ -11,6 +18,8 @@ foreach (var pair in new[] { ("1.3.0-beta.9", "v1.3.0-beta.14"), ("1.3.0-beta.14
 foreach (var invalid in new[] { "", "main", "1.3.0-beta.no", "1.3.0-beta.9999999999999", "1.3.0-extra" })
     if (BioEden.NoDOF.ReleaseVersion.TryVersion(invalid, out _)) throw new Exception("Invalid release accepted.");
 Console.WriteLine("PASS: release ordering, stable versus beta, malformed versions.");
+if (BioEden.NoDOF.ReleaseVersion.NewestDownload("[{\"tag_name\":\"v1.3.0-beta.4\",\"assets\":[{\"name\":\"mod.zip\"}]},{\"tag_name\":\"v1.3.0-beta.14\",\"assets\":[{\"name\":\"mod.zip\"}]},{\"tag_name\":\"v2.0.0\",\"draft\":true,\"assets\":[{\"name\":\"mod.zip\"}]}]") != "v1.3.0-beta.14") throw new Exception("Release JSON selection failed.");
+if (args.Length > 1 && BioEden.NoDOF.ReleaseVersion.NewestDownload(File.ReadAllText(args[1])) == null) throw new Exception("Live GitHub response parsing failed.");
 IEnumerable<TypeDefinition> Types(IEnumerable<TypeDefinition> types) => types.SelectMany(t => new[] {t}.Concat(Types(t.NestedTypes)));
 string Operand(object operand, Mono.Cecil.Cil.MethodBody body) => operand switch {
     null => "", Instruction i => "ILINDEX:" + body.Instructions.IndexOf(i),
