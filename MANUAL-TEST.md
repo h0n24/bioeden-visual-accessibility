@@ -102,3 +102,18 @@ Beta 13 performance follow-up: compare F1 On/Off at the same camera position and
 - Move the antenna preview repeatedly before confirming placement; the range outline should follow it without freezing the UI.
 - Repeat with Antenna Range Outline Off. The reveal behavior should be identical; only the extra outline should disappear.
 - Toggle F1 off and on around a placement. The antenna should keep its normal placement and reveal behavior in both states.
+
+## Mineral ground color (beta 17)
+
+- Compare blue, iron/brown, and green mineral deposits with the filter off/on. Both the model and its projected ground patch should retain their original color.
+- Move and zoom the camera: patches must stay attached to the ground without appearing through buildings or rocks. Check the edges for rectangular color spill.
+- Exhaust a deposit while the filter is on: its ground patch must disappear when the game disables the decal.
+- Toggle the filter off, reload a save, and test another biome. The original appearance must return.
+- Compare FPS at the same paused camera position with and without visible deposits. The additional color capture should run only with the filter on and a visible mineral decal.
+
+## Mineral hexagonal ground and discovery (1.3.0)
+
+- Enable the filter: mineral ground patches retain color within the map hexagon; models retain color. Pan and zoom to check that the hexagon stays aligned.
+- On a new map, undiscovered deposits must not be revealed by either the model redraw or ground restoration.
+- Explore a deposit using an antenna: the pattern should appear within the two-second filter refresh interval.
+- Disable the filter and reload a save: normal fog-of-war and the original ground appearance must remain intact.

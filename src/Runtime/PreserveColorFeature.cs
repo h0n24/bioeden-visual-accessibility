@@ -13,12 +13,24 @@ namespace BioEden.NoDOF
     {
         private PreserveColorPass pass;
 
-        public override void Create() => pass = new PreserveColorPass();
-        protected override void Dispose(bool disposing) { pass?.Dispose(); }
+        private MineralGroundPass mineralGround;
+        public override void Create()
+        {
+            mineralGround = new MineralGroundPass();
+            pass = new PreserveColorPass(mineralGround);
+        }
+        protected override void Dispose(bool disposing) { pass?.Dispose(); mineralGround?.Dispose(); }
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             if (FilterController.IsEnabled && renderingData.cameraData.cameraType == CameraType.Game)
+            {
+                if (mineralGround.Prepare(renderingData.cameraData.camera))
+                {
+                    renderer.EnqueuePass(mineralGround.Capture);
+                    renderer.EnqueuePass(mineralGround);
+                }
                 renderer.EnqueuePass(pass);
+            }
         }
 
         private sealed class PreserveColorPass : ScriptableRenderPass
@@ -62,14 +74,46 @@ namespace BioEden.NoDOF
                 return neutralPixels != null;
             }
 
-            public PreserveColorPass()
+            private readonly MineralGroundPass mineralGround;
+            public PreserveColorPass(MineralGroundPass ground)
             {
+                mineralGround = ground;
                 renderPassEvent = RenderPassEvent.AfterRenderingPostProcessing;
                 // Selected objects retain their original physics and camera layers.
             }
 
             public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
             {
+                // Remove late lighting/grading tint before restoring selected colors.
+                if (EnsureNeutralShader())
+                {
+                    var neutral = CommandBufferPool.Get("BioEden neutral background");
+                    try
+                    {
+                        var descriptor = renderingData.cameraData.cameraTargetDescriptor;
+                        descriptor.depthBufferBits = 0; descriptor.msaaSamples = 1;
+                        int snapshot = Shader.PropertyToID("_BioEdenBackgroundPixels");
+                        var renderer = renderingData.cameraData.renderer;
+                        var color = renderer.cameraColorTargetHandle.nameID;
+                        neutral.GetTemporaryRT(snapshot, descriptor, FilterMode.Point);
+                        neutral.Blit(color, snapshot);
+                        // Bind explicitly: the multi-pass material must sample
+                        // this frame's copy, never the fallback _MainTex texture.
+                        neutral.SetGlobalTexture("_BioEdenBackgroundPixels", new RenderTargetIdentifier(snapshot));
+                        neutral.Blit(new RenderTargetIdentifier(snapshot), color, neutralPixels, 2);
+                        // MineralGround's mask restores the final pre-neutralization
+                        // pixels, preserving lighting and the exact discovered cell.
+                        neutral.SetGlobalTexture("_BioEdenMineralPixels", new RenderTargetIdentifier(snapshot));
+                        neutral.SetRenderTarget(color, renderer.cameraDepthTargetHandle.nameID);
+                        context.ExecuteCommandBuffer(neutral);
+                        neutral.Clear();
+                        mineralGround.RestoreAfterNeutralization(context, ref renderingData);
+                        neutral.ReleaseTemporaryRT(snapshot);
+                        neutral.SetRenderTarget(color, renderer.cameraDepthTargetHandle.nameID);
+                        context.ExecuteCommandBuffer(neutral);
+                    }
+                    finally { CommandBufferPool.Release(neutral); }
+                }
                 // Native culling, sorting and SRP batching replace per-object commands.
                 var drawing = CreateDrawingSettings(new ShaderTagId("UniversalForward"), ref renderingData, SortingCriteria.CommonOpaque);
                 drawing.SetShaderPassName(1, new ShaderTagId("UniversalForwardOnly"));

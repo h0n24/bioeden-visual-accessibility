@@ -34,6 +34,7 @@ namespace BioEden.NoDOF
         }
         private static readonly List<Material> materials = new List<Material>();
         internal const uint PreserveRenderingMask = 1u << 31;
+        private readonly PoweredTint poweredTint = new PoweredTint();
         private readonly Dictionary<Renderer, uint> preservedRenderers = new Dictionary<Renderer, uint>();
         private readonly Dictionary<Renderer, Material[]> cleanWaterMaterials = new Dictionary<Renderer, Material[]>();
         private readonly Dictionary<Renderer, Material[]> cleanWaterDraws = new Dictionary<Renderer, Material[]>();
@@ -222,6 +223,9 @@ namespace BioEden.NoDOF
         {
             if (!filterEnabled) { RestorePreservedLayers(); return; }
             RestoreRenderingMasks();
+            MineralGround.Clear();
+            poweredTint.Begin();
+            RefreshWaterContext();
             foreach (string typeName in new[]
             {
                 "Biomes.Structures.StructureIngame",
@@ -231,6 +235,7 @@ namespace BioEden.NoDOF
                 "MineralHandler"
             }) AddRenderersUnder(Type.GetType(typeName + ", Assembly-CSharp"));
 
+            poweredTint.End();
             RefreshSanctuaries();
             RefreshWaterContext();
             waterPollution.Clear();
@@ -350,12 +355,72 @@ namespace BioEden.NoDOF
             }
         }
 
+        internal sealed class MineralGroundEntry
+        {
+            internal UnityEngine.Rendering.Universal.DecalProjector Decal;
+            internal object Slot;
+            internal Vector4 HexCenter, HexEdge0, HexEdge1, HexEdge2;
+            internal FieldInfo Explored;
+            internal bool IsExplored => Slot != null && Explored?.GetValue(Slot) is bool value && value;
+        }
+        internal static readonly List<MineralGroundEntry> MineralGround = new List<MineralGroundEntry>();
+
         private void AddRenderersUnder(Type componentType)
         {
             if (componentType == null) return;
             foreach (var obj in UnityEngine.Object.FindObjectsByType(componentType, FindObjectsSortMode.None))
                 if (obj is Component component)
-                    foreach (var renderer in component.GetComponentsInChildren<Renderer>(true)) AddPreservedRenderer(renderer);
+                {
+                    bool electricity = false;
+                    if (componentType.Name == "StructureIngame")
+                    {
+                        object service = FindProperty(componentType, "Service")?.GetValue(component);
+                        var power = Type.GetType("Biomes.Power.IHasPower, Assembly-CSharp");
+                        if (service != null && power != null && power.IsInstanceOfType(service))
+                        {
+                            object state = power.GetProperty("PoweredState")?.GetValue(service);
+                            // -1 means no power requirement, not an energized connection.
+                            int bits = state == null ? 0 : Convert.ToInt32(state);
+                            electricity = bits > 0 && (bits & 1) != 0;
+                        }
+                    }
+                    object mineralSlot = null;
+                    FieldInfo explored = null;
+                    if (componentType.Name == "MineralHandler")
+                    {
+                        mineralSlot = FindProperty(componentType, "Slot")?.GetValue(component);
+                        explored = mineralSlot == null ? null : FindField(mineralSlot.GetType(), "explored");
+                        // Fail closed: normal fog-of-war must not be bypassed by
+                        // either the model redraw or its projected ground patch.
+                        if (!(explored?.GetValue(mineralSlot) is bool discovered) || !discovered) continue;
+                    }
+                    foreach (var renderer in component.GetComponentsInChildren<Renderer>(true))
+                    {
+                        AddPreservedRenderer(renderer);
+                        if (electricity) poweredTint.Add(renderer);
+                    }
+                    if (componentType.Name == "MineralHandler")
+                        foreach (var decal in component.GetComponentsInChildren<UnityEngine.Rendering.Universal.DecalProjector>(true))
+                            if (decal.material != null && decal.material.shader.name == "Bag/Shader_URP_Decal_Resource")
+                                {
+                                var entry = new MineralGroundEntry { Decal = decal, Slot = mineralSlot, Explored = explored };
+                                object coord = FindProperty(mineralSlot.GetType(), "Coord")?.GetValue(mineralSlot);
+                                var toPosition = playerType?.GetMethod("Coord2Pos");
+                                var neighbor = coord?.GetType().GetMethod("GetNeighbor", BindingFlags.Public | BindingFlags.Static);
+                                if (coord == null || toPosition == null || neighbor == null) continue;
+                                var center = (Vector3)toPosition.Invoke(player, new[] { coord });
+                                entry.HexCenter = new Vector4(center.x, center.z, 0, 0);
+                                var edges = new Vector4[3];
+                                for (int i = 0; i < 3; i++)
+                                {
+                                    var next = neighbor.Invoke(null, new object[] { coord, i });
+                                    var delta = (Vector3)toPosition.Invoke(player, new[] { next }) - center;
+                                    edges[i] = new Vector4(delta.x, delta.z, (delta.x * delta.x + delta.z * delta.z) * .5f, 0);
+                                }
+                                entry.HexEdge0 = edges[0]; entry.HexEdge1 = edges[1]; entry.HexEdge2 = edges[2];
+                                MineralGround.Add(entry);
+                            }
+                }
         }
 
         private void AddPreservedRenderer(Renderer renderer)
@@ -389,9 +454,11 @@ namespace BioEden.NoDOF
 
         private void RestorePreservedLayers()
         {
+            poweredTint.Clear();
             foreach (var lake in lakeMeshes.Values) lake.Dispose();
             lakeMeshes.Clear();
             waterRenderers.Clear();
+            MineralGround.Clear();
             waterFeatureAtCoord.Clear();
             waterPollution.Clear();
             waterGrid = null;

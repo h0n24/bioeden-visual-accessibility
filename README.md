@@ -1,12 +1,22 @@
-# BioEden – Visual Accessibility 1.3.0 beta 16
+# BioEden Visual Accessibility 1.3.0
 
-**Installed version and updates:** Settings → Accessibility includes a Mod version row. Click “Mod info, updates”, then “Check GitHub”. The check runs only on request, includes downloadable beta releases, and reports connection failures. “Open downloads” opens GitHub; nothing is installed automatically. Extract the newest release ZIP and run Install.cmd with the game closed to upgrade, without uninstalling first.
+## Visual Accessibility 1.3.0
 
-Beta 14 also fixes the CMD launchers to use game-folder discovery and a path prompt. In a same-save comparison, the user measured approximately 140 FPS paused, 60–112 FPS at 1× and 50–56 FPS at maximum speed **without the mod**. The simulation slowdown therefore also occurs in the original game; its root cause remains unknown.
+Stable release consolidating the recent beta improvements.
 
-Beta 13 replaces beta 12's individual color draw commands with Unity's native culled and batched rendering. Selection uses rendering masks only; GameObject physics layers and camera masks remain unchanged. FPS improvement requires in-game confirmation.
+- Clearer minerals and hex-aligned ground colors, with discovery checks.
+- More saturated, yellow-tinted electricity-powered structures in filter mode.
+- Reduced background color cast while preserving terrain detail.
+- Clean-water presentation and optional Simplify Clean Lakes.
+- Depleted sanctuary/ruin desaturation and ambient fog suppression.
+- Installed version and on-demand GitHub update detection in Accessibility settings.
+- Improved installer discovery and upgrade workflow.
 
-Beta 12 preserves selected colors without changing object layers or camera masks. This isolates a suspected interaction with building placement and navigation. A reported freeze also produced missing NavMeshAgent exceptions in the game's OrbsManager/TimeManager; the root cause and in-game fix remain unconfirmed.
+### Install or update
+Close BioEden, download and extract the attached ZIP, then run Install.cmd. No need to uninstall the previous version first. Start the game normally.
+
+Update checks do not download or install automatically. Supported game version: BioEden 1.2.0.0 on Windows. Performance depends on hardware, save and simulation speed.
+
 
 A Windows accessibility mod for BioEden 1.2.0.0 (Unity 6000.0.56f2).
 
@@ -31,7 +41,7 @@ The antenna outline does not change range or building rules. It uses the same ge
 
 The map filter uses the game's existing fullscreen image adjustment with saturation set to zero. It does not open the game's planet-information mode, so building, selecting objects and following normal game markers remain available. The UI stays colored. The filter icon is created only after entering the game world, sits before Help and displays the active key. The filter is disabled after a fresh installation. When enabled, only player structures, mineral objects and polluted water are redrawn in color; grass, trees, rocks, clean water stay desaturated. Ambient cloud and ground-fog VFX are hidden until the filter is switched off. The selective redraw avoids the full-scene performance cost of earlier builds. Extended Zoom suppresses Depth of Field while active and restores the user's Video setting when disabled.
 
-Clean water uses the game's shipped URP Unlit shader to avoid lighting tints. Lakes, rivers and source water share a neutral gray base. **Simplify Clean Lakes** selects a flat surface (On) or the original animated lake waves (Off). With Off, a final pass converts rendered clean-lake pixels to grayscale, preserving the original wave masks and animation without lighting tint. This adds one screen-color copy and clean-lake draw pass while the filter is active; On skips this extra work. Polluted water keeps its original material. Visual verification of shorelines and color neutrality is pending.
+Clean water uses the game's shipped URP Unlit shader to avoid lighting tints. Lakes, rivers and source water share a neutral gray base. **Simplify Clean Lakes** selects a flat surface (On) or the original animated lake waves (Off). With Off, a final pass converts rendered clean-lake pixels to grayscale, preserving the original wave masks and animation without lighting tint. This adds one screen-color copy and clean-lake draw pass while the filter is active; On skips this extra work. Polluted water keeps its original material. The background filter also reduces residual color tint while retaining scene detail.
 
 ## Screenshots
 
@@ -48,7 +58,7 @@ Extended Zoom applies to the normal world camera. It does not change the dome in
 ## Installation and removal
 
 1. Close BioEden.
-2. Download the ZIP from **Releases**, extract it and run `install.ps1` or `Install.cmd`.
+2. Download the ZIP from **Releases**, extract it and run `Install.cmd`.
 3. If the installer cannot find the game, pass its path with `-GamePath`.
 
 Use `Status.cmd` to check the installation. `Uninstall.cmd` restores the original game libraries and removes the mod runtime. The mod does not require a mod loader or the .NET SDK.
